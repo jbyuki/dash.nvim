@@ -1,0 +1,226 @@
+##little_runner
+@../lua/little_runner/init.lua=
+@script_variables
+local M = {}
+@implement
+
+return M
+
+@o+=
+local a
+
+@implement+=
+function M.execute(filename, ft)
+  local buf
+  @create_split_if_none
+  if ft == "lua" then
+    @create_pipes_neovim
+    @clear_all_highlight
+    @spawn_neovim_process
+    @if_spawn_error_print
+    @register_pipe_callback_neovim
+    if handle then
+      @clear_output_lines
+    end
+  end
+end
+
+@create_pipes_neovim+=
+local stdin = vim.loop.new_pipe(false)
+local stdout = vim.loop.new_pipe(false)
+local stderr = vim.loop.new_pipe(false)
+
+@spawn_neovim_process+=
+-- After a lot of sweet and tears, I've found
+-- that neovim only outputs to stdout on exit
+-- that's why the -c exit is crucial,
+-- otherwise nothing is captured.
+local handle, err = vim.loop.spawn("nvim",
+	{
+		stdio = {stdin, stdout, stderr},
+		args = {"--headless", "-u", "NONE", "-c", "luafile " .. filename, "-c", "exit"},
+		cwd = ".",
+	}, function(code, signal)
+		vim.schedule(function()
+      @compare_with_previous_output
+      @higlight_differences
+      @save_current_output
+		end)
+	end)
+
+@if_spawn_error_print+=
+assert(handle, err)
+
+@script_variables+=
+local output_lines = {}
+
+@clear_output_lines+=
+output_lines = {}
+
+@register_pipe_callback_neovim+=
+stdout:read_start(function(err, data)
+  vim.schedule(function()
+    assert(not err, err)
+    if data then
+      @append_output_to_buf
+    end
+  end)
+end)
+
+stderr:read_start(function(err, data)
+  vim.schedule(function()
+    assert(not err, err)
+    if data then
+      @append_output_to_buf
+    end
+  end)
+end)
+
+@script_variables+=
+local execute_win, execute_buf
+
+@create_split_if_none+=
+if not execute_win or not execute_buf or not vim.api.nvim_win_is_valid(execute_win) or vim.api.nvim_win_get_buf(execute_win) ~= execute_buf then
+  vim.api.nvim_command("bo 10new")
+  execute_win = vim.api.nvim_get_current_win()
+  vim.api.nvim_command("wincmd p")
+  execute_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_win_set_buf(execute_win, execute_buf)
+end
+buf = execute_buf
+
+@clear_output_window+=
+vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
+
+@script_variables+=
+local MAX_LINES = 10000
+
+@append_output_to_buf+=
+if #output_lines == 0 then
+  @clear_output_window
+end
+
+for line in vim.gsplit(data, "\r*\n") do
+  if #output_lines == 0 then
+    vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+  else
+    vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+  end
+  table.insert(output_lines, line)
+  if #output_lines >= MAX_LINES then
+    @abort_script
+    error("little_runner.nvim: too many lines. Abort script")
+  end
+end
+
+@../plugin/little_runner.vim=
+@check_if_plugin_already_loaded
+@register_vim_commands
+
+@check_if_plugin_already_loaded+=
+if exists('g:loaded_little_runner')
+    finish
+endif
+let g:loaded_little_runner= 1
+
+@register_vim_commands+=
+command! -nargs=0 -bar LittleRun lua require"little_runner".execute_buf()
+
+@o+=
+local a
+end
+
+@implement+=
+function M.execute_buf()
+  @get_current_buffer_filename
+  @get_current_buffer_filetype
+  M.execute(filename, ft)
+end
+
+@get_current_buffer_filename+=
+local filename = vim.api.nvim_buf_get_name(0)
+
+@get_current_buffer_filetype+=
+local ft = vim.api.nvim_buf_get_option(0, "ft")
+
+@script_variables+=
+local previous
+
+@compare_with_previous_output+=
+local new_lines = {}
+
+if previous then 
+  local best = {}
+  @find_longest_common_subsequence
+  @find_current_lines_which_are_not_in_lcs
+else
+  @all_lines_are_new
+end
+
+@find_longest_common_subsequence+=
+local best = {}
+
+local A = previous
+local B = output_lines
+
+best[0] = {}
+for j=0,#B do
+  best[0][j] = {}
+end
+
+for i=1,#A do
+  best[i] = {}
+  best[i][0] = {}
+  for j=1,#B do
+    if B[j] ~= A[i] then
+      if #best[i-1][j] > #best[i][j-1] then
+        best[i][j] = best[i-1][j]
+      else
+        best[i][j] = best[i][j-1]
+      end
+    else
+      best[i][j] = vim.deepcopy(best[i-1][j-1])
+      table.insert(best[i][j], j)
+    end
+  end
+end
+
+local lcs = best[#previous][#output_lines]
+
+@find_current_lines_which_are_not_in_lcs+=
+local k = 1
+for i=1,#output_lines do
+  if k <= #lcs and lcs[k] == i then
+    k = k + 1
+  else
+    table.insert(new_lines, i)
+  end
+end
+
+@all_lines_are_new+=
+for i=1,#output_lines do
+  table.insert(new_lines, i)
+end
+
+@save_current_output+=
+previous = output_lines
+
+@script_variables+=
+local hl_ns
+
+@clear_all_highlight+=
+if hl_ns then
+  vim.api.nvim_buf_clear_namespace(buf, hl_ns, 0, -1)
+else
+  hl_ns = vim.api.nvim_create_namespace("")
+end
+
+@higlight_differences+=
+for _,lnum in ipairs(new_lines) do
+  vim.api.nvim_buf_add_highlight(buf, hl_ns, "Search", lnum-1, 0, -1)
+end
+
+@abort_script+=
+handle:close()
+stdout:read_stop()
+stderr:read_stop()

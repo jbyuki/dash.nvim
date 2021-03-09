@@ -1,0 +1,1 @@
+C:\Users\I354324\fakeroot\code\nvimplugins\little_runner.nvim\src\init.lua.tl
