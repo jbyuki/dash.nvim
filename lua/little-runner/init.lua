@@ -123,7 +123,7 @@ function M.execute(filename, ft)
               handle:close()
               stdout:read_stop()
               stderr:read_stop()
-              error("little_runner.nvim: too many lines. Abort script")
+              error("little-runner.nvim: too many lines. Abort script")
             end
           end
           
@@ -151,7 +151,7 @@ function M.execute(filename, ft)
               handle:close()
               stdout:read_stop()
               stderr:read_stop()
-              error("little_runner.nvim: too many lines. Abort script")
+              error("little-runner.nvim: too many lines. Abort script")
             end
           end
           
