@@ -123,6 +123,7 @@ function M.execute(filename, ft)
               handle:close()
               stdout:read_stop()
               stderr:read_stop()
+              
               error("little-runner.nvim: too many lines. Abort script")
             end
           end
@@ -151,6 +152,7 @@ function M.execute(filename, ft)
               handle:close()
               stdout:read_stop()
               stderr:read_stop()
+              
               error("little-runner.nvim: too many lines. Abort script")
             end
           end
@@ -167,9 +169,18 @@ function M.execute(filename, ft)
 end
 
 function M.execute_buf()
-  local filename = vim.api.nvim_buf_get_name(0)
+  local name = vim.api.nvim_buf_get_name(0)
+  local extext = vim.fn.fnamemodify(name, ":e:e")
+  local tangle = string.match(extext, ".*%.tl")
   
-  local ft = vim.api.nvim_buf_get_option(0, "ft")
+  local filename, ft
+  if tangle then
+    filename = require"ntangle".getRootFilename()
+  else
+    filename = vim.api.nvim_buf_get_name(0)
+    
+  end
+  ft = vim.api.nvim_buf_get_option(0, "ft")
   
   M.execute(filename, ft)
 end

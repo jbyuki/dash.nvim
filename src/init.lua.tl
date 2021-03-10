@@ -132,16 +132,22 @@ end
 
 @implement+=
 function M.execute_buf()
-  @get_current_buffer_filename
+  @check_if_tangle_file
+  local filename, ft
+  if tangle then
+    @get_root_ntangle
+  else
+    @get_current_buffer_filename
+  end
   @get_current_buffer_filetype
   M.execute(filename, ft)
 end
 
 @get_current_buffer_filename+=
-local filename = vim.api.nvim_buf_get_name(0)
+filename = vim.api.nvim_buf_get_name(0)
 
 @get_current_buffer_filetype+=
-local ft = vim.api.nvim_buf_get_option(0, "ft")
+ft = vim.api.nvim_buf_get_option(0, "ft")
 
 @script_variables+=
 local previous
@@ -224,3 +230,11 @@ end
 handle:close()
 stdout:read_stop()
 stderr:read_stop()
+
+@check_if_tangle_file+=
+local name = vim.api.nvim_buf_get_name(0)
+local extext = vim.fn.fnamemodify(name, ":e:e")
+local tangle = string.match(extext, ".*%.tl")
+
+@get_root_ntangle+=
+filename = require"ntangle".getRootFilename()
