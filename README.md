@@ -28,7 +28,7 @@ This is an interesting workaround because executing a infinite loop through `lua
 
 You can navigate instantly to the error line.
 
-<img src="https://postimg.cc/K4GkX3t2" width="300">
+<img src="https://i.postimg.cc/QN5pTptH/Capture.png" width="300">
 
 Installation
 ------------
