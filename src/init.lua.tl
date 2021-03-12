@@ -13,6 +13,9 @@ local a
 function M.execute(filename, ft)
   local buf
   @create_split_if_none
+  @save_split_size
+  @close_quickfix_if_open
+  @restore_split_size_if_quickfix_close
   if ft == "lua" then
     @create_pipes_neovim
     @clear_all_highlight
@@ -71,7 +74,10 @@ stderr:read_start(function(err, data)
   vim.schedule(function()
     assert(not err, err)
     if data then
+      local open_quickfix = false
       @append_output_to_buf
+      @parse_error_for_quickfix
+      @open_quickfix
     end
   end)
 end)

@@ -24,6 +24,12 @@ This is an interesting workaround because executing a infinite loop through `lua
 
 <img src="https://i.postimg.cc/Y91KT3H4/Capture.png" width="300">
 
+### Fill Quickfix 
+
+You can navigate instantly to the error line.
+
+<img src="https://postimg.cc/K4GkX3t2" width="300">
+
 Installation
 ------------
 

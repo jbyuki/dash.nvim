@@ -1,4 +1,4 @@
--- Generated from init.lua.tl using ntangle.nvim
+-- Generated from init.lua.tl, quickfix.lua.tl, resize.lua.tl using ntangle.nvim
 local output_lines = {}
 
 local execute_win, execute_buf
@@ -21,6 +21,11 @@ function M.execute(filename, ft)
   end
   buf = execute_buf
   
+  local execute_win_height = vim.api.nvim_win_get_height(execute_win)
+  
+  vim.api.nvim_command("cclose")
+  vim.fn.setqflist({})
+  vim.api.nvim_win_set_height(execute_win, execute_win_height)
   if ft == "lua" then
     local stdin = vim.loop.new_pipe(false)
     local stdout = vim.loop.new_pipe(false)
@@ -136,6 +141,7 @@ function M.execute(filename, ft)
       vim.schedule(function()
         assert(not err, err)
         if data then
+          local open_quickfix = false
           if #output_lines == 0 then
             vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
             
@@ -155,6 +161,29 @@ function M.execute(filename, ft)
               
               error("little-runner.nvim: too many lines. Abort script")
             end
+          end
+          
+          if ft == "lua" then
+            for line in vim.gsplit(data, "\r*\n") do
+              if string.match(line, "^E%d+: Error while creating lua chunk: ") then
+                local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
+                
+                
+                vim.fn.setqflist({{
+                  filename = fn, 
+                  lnum = lnum, 
+                  nr = errnum,
+                  text = errmsg,
+                  type = 'E'
+                }})
+                open_quickfix = true
+                
+              end
+            end
+          end
+          
+          if open_quickfix then
+            vim.api.nvim_command("copen")
           end
           
         end
