@@ -50,6 +50,10 @@ function M.execute(filename, ft)
     		cwd = ".",
     	}, function(code, signal)
     		vim.schedule(function()
+          if #output_lines == 0 then
+            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
+            
+          end
           local new_lines = {}
           
           if previous then 
@@ -207,6 +211,7 @@ function M.execute_buf()
   local filename, ft
   if tangle then
     filename = require"ntangle".getRootFilename()
+    
   else
     filename = vim.api.nvim_buf_get_name(0)
     

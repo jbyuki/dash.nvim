@@ -45,6 +45,7 @@ local handle, err = vim.loop.spawn("nvim",
 		cwd = ".",
 	}, function(code, signal)
 		vim.schedule(function()
+      @if_no_output_clear_console
       @compare_with_previous_output
       @higlight_differences
       @save_current_output
@@ -246,3 +247,8 @@ local tangle = string.match(extext, ".*%.tl")
 
 @get_root_ntangle+=
 filename = require"ntangle".getRootFilename()
+
+@if_no_output_clear_console+=
+if #output_lines == 0 then
+  @clear_output_window
+end
