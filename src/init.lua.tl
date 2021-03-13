@@ -87,11 +87,13 @@ local execute_win, execute_buf
 
 @create_split_if_none+=
 if not execute_win or not execute_buf or not vim.api.nvim_win_is_valid(execute_win) or vim.api.nvim_win_get_buf(execute_win) ~= execute_buf then
-  vim.api.nvim_command("bo 10new")
-  execute_win = vim.api.nvim_get_current_win()
-  vim.api.nvim_command("wincmd p")
+  vim.api.nvim_command("bo 30vnew")
   execute_buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_win_set_buf(execute_win, execute_buf)
+  vim.api.nvim_command("setlocal nonumber")
+  vim.api.nvim_command("setlocal norelativenumber")
+  execute_win = vim.api.nvim_get_current_win()
+  vim.api.nvim_command("wincmd p")
 end
 buf = execute_buf
 
