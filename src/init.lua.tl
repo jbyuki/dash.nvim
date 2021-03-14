@@ -17,9 +17,18 @@ function M.execute(filename, ft)
   @close_quickfix_if_open
   @restore_split_size_if_quickfix_close
   if ft == "lua" then
-    @create_pipes_neovim
+    @create_pipes
     @clear_all_highlight
     @spawn_neovim_process
+    @if_spawn_error_print
+    @register_pipe_callback_neovim
+    if handle then
+      @clear_output_lines
+    end
+  elseif ft == "python" then
+    @create_pipes
+    @clear_all_highlight
+    @spawn_python_instance
     @if_spawn_error_print
     @register_pipe_callback_neovim
     if handle then
@@ -28,7 +37,7 @@ function M.execute(filename, ft)
   end
 end
 
-@create_pipes_neovim+=
+@create_pipes+=
 local stdin = vim.loop.new_pipe(false)
 local stdout = vim.loop.new_pipe(false)
 local stderr = vim.loop.new_pipe(false)
@@ -254,5 +263,5 @@ if #output_lines == 0 then
   @clear_output_window
 end
 
-@rename_output_buffer+=
-vim.api.nvim_command("file [Output]")
+-- @rename_output_buffer+=
+-- vim.api.nvim_command("file [Output]")

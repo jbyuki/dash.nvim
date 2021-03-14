@@ -1,4 +1,4 @@
-" Generated from init.lua.tl, quickfix.lua.tl, resize.lua.tl using ntangle.nvim
+" Generated from init.lua.tl, python.lua.tl, quickfix.lua.tl, resize.lua.tl using ntangle.nvim
 if exists('g:loaded_little_runner')
     finish
 endif
