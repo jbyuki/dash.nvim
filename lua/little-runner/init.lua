@@ -1,4 +1,4 @@
--- Generated from execute_buf.lua.tl, init.lua.tl, lua-quickfix.lua.tl, lua-test.lua.tl, python-test.lua.tl, python.lua.tl, test_suite.lua.tl, vimscript-quickfix.lua.tl, vimscript-test.lua.tl, vimscript.lua.tl using ntangle.nvim
+-- Generated from execute_buf.lua.tl, init.lua.tl, lua-quickfix.lua.tl, lua-test.lua.tl, python-test.lua.tl, python.lua.tl, resize.lua.tl, test_suite.lua.tl, vimscript-quickfix.lua.tl, vimscript-test.lua.tl, vimscript.lua.tl using ntangle.nvim
 local output_lines = {}
 
 local execute_win, execute_buf
@@ -52,7 +52,19 @@ function M.execute(filename, ft, open_split, done)
   if not execute_win or not execute_buf or not vim.api.nvim_win_is_valid(execute_win) or vim.api.nvim_win_get_buf(execute_win) ~= execute_buf then
     execute_buf = vim.api.nvim_create_buf(false, true)
     if open_split then
-      vim.api.nvim_command("bo 30vnew")
+      local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
+      local split
+      local win_size
+      local percent = 0.2
+      if width > 2*height then
+        split = "vnew"
+        win_size = math.floor(width*percent)
+      else
+        split = "new"
+        win_size = math.floor(height*percent)
+      end
+  
+      vim.api.nvim_command("bo " .. win_size .. split)
       execute_win = vim.api.nvim_get_current_win()
       vim.api.nvim_win_set_buf(execute_win, execute_buf)
       vim.api.nvim_command("setlocal nonumber")
@@ -62,8 +74,11 @@ function M.execute(filename, ft, open_split, done)
   end
   buf = execute_buf
   
+  local execute_win_height = vim.api.nvim_win_get_height(execute_win)
+  
   vim.api.nvim_command("cclose")
   vim.fn.setqflist({})
+  vim.api.nvim_win_set_height(execute_win, execute_win_height)
 
   local stdin = vim.loop.new_pipe(false)
   local stdout = vim.loop.new_pipe(false)
