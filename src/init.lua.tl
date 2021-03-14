@@ -94,6 +94,7 @@ if not execute_win or not execute_buf or not vim.api.nvim_win_is_valid(execute_w
   vim.api.nvim_win_set_buf(execute_win, execute_buf)
   vim.api.nvim_command("setlocal nonumber")
   vim.api.nvim_command("setlocal norelativenumber")
+  @rename_output_buffer
   vim.api.nvim_command("wincmd p")
 end
 buf = execute_buf
@@ -252,3 +253,6 @@ filename = require"ntangle".getRootFilename()
 if #output_lines == 0 then
   @clear_output_window
 end
+
+@rename_output_buffer+=
+vim.api.nvim_command("file [Output]")

@@ -19,6 +19,7 @@ function M.execute(filename, ft)
     vim.api.nvim_win_set_buf(execute_win, execute_buf)
     vim.api.nvim_command("setlocal nonumber")
     vim.api.nvim_command("setlocal norelativenumber")
+    vim.api.nvim_command("file [Output]")
     vim.api.nvim_command("wincmd p")
   end
   buf = execute_buf
@@ -54,6 +55,7 @@ function M.execute(filename, ft)
             vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
             
           end
+          
           local new_lines = {}
           
           if previous then 
