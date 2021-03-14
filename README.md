@@ -14,7 +14,7 @@ Supported
 | Language | Execute | Quickfix |
 |----------|:-------:|:--------:|
 | _Lua_ | :seedling: | :seedling: |
-| _Python_ | :seedling: | :seedling: |
+| _Python_ | :seedling: | |
 
 Can be used in conjunction with [ntangle.nvim](https://github.com/jbyuki/ntangle.nvim).
 
