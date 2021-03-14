@@ -1,6 +1,7 @@
 ##little-runner
 @../lua/little-runner/init.lua=
 @script_variables
+@add_tests
 local M = {}
 @implement
 
@@ -10,7 +11,7 @@ return M
 local a
 
 @implement+=
-function M.execute(filename, ft)
+function M.execute(filename, ft, open_split, done)
   local buf
   @create_split_if_none
   @save_split_size
@@ -19,6 +20,19 @@ function M.execute(filename, ft)
 
   @create_pipes
   @clear_all_highlight
+
+  local finish = function(code, signal) 
+		vim.schedule(function()
+      @if_no_output_clear_console
+      @compare_with_previous_output
+      @higlight_differences
+      @save_current_output
+      if done then
+        done()
+      end
+		end)
+  end
+
   local handle, err
   if ft == "lua" then
     @spawn_neovim_process
@@ -49,14 +63,7 @@ handle, err = vim.loop.spawn("nvim",
 		stdio = {stdin, stdout, stderr},
 		args = {"--headless", "-u", "NONE", "-c", "luafile " .. filename, "-c", "exit"},
 		cwd = ".",
-	}, function(code, signal)
-		vim.schedule(function()
-      @if_no_output_clear_console
-      @compare_with_previous_output
-      @higlight_differences
-      @save_current_output
-		end)
-	end)
+	}, finish)
 
 @if_spawn_error_print+=
 assert(handle, err)
@@ -94,14 +101,16 @@ local execute_win, execute_buf
 
 @create_split_if_none+=
 if not execute_win or not execute_buf or not vim.api.nvim_win_is_valid(execute_win) or vim.api.nvim_win_get_buf(execute_win) ~= execute_buf then
-  vim.api.nvim_command("bo 30vnew")
-  execute_win = vim.api.nvim_get_current_win()
   execute_buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_win_set_buf(execute_win, execute_buf)
-  vim.api.nvim_command("setlocal nonumber")
-  vim.api.nvim_command("setlocal norelativenumber")
-  @rename_output_buffer
-  vim.api.nvim_command("wincmd p")
+  if open_split then
+    vim.api.nvim_command("bo 30vnew")
+    execute_win = vim.api.nvim_get_current_win()
+    vim.api.nvim_win_set_buf(execute_win, execute_buf)
+    vim.api.nvim_command("setlocal nonumber")
+    vim.api.nvim_command("setlocal norelativenumber")
+    @rename_output_buffer
+    vim.api.nvim_command("wincmd p")
+  end
 end
 buf = execute_buf
 
@@ -156,7 +165,7 @@ function M.execute_buf()
     @get_current_buffer_filename
   end
   @get_current_buffer_filetype
-  M.execute(filename, ft)
+  M.execute(filename, ft, true)
 end
 
 @get_current_buffer_filename+=

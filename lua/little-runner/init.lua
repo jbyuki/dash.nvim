@@ -1,4 +1,4 @@
--- Generated from init.lua.tl, lua-quickfix.lua.tl, python.lua.tl, vimscript-quickfix.lua.tl, vimscript.lua.tl using ntangle.nvim
+-- Generated from execute_buf.lua.tl, init.lua.tl, lua-quickfix.lua.tl, lua-test.lua.tl, python-test.lua.tl, python.lua.tl, test_suite.lua.tl, vimscript-quickfix.lua.tl, vimscript-test.lua.tl, vimscript.lua.tl using ntangle.nvim
 local output_lines = {}
 
 local execute_win, execute_buf
@@ -9,17 +9,56 @@ local previous
 
 local hl_ns
 
+local tests = {}
+
+tests["lua"] = {
+  str = [[
+print("hello")
+]],
+  expected = { "hello" }
+}
+tests["python"] = {
+  str = [[
+print("hello")
+]],
+  expected = { "hello", "" }
+}
+tests["vim"] = {
+  str = [[
+echo "hello"
+]],
+  expected = { "hello" }
+}
 local M = {}
-function M.execute(filename, ft)
+function M.execute_lines(lines, ft, show_pane, done)
+  local fname = vim.fn.tempname()
+  local f = io.open(fname, "w")
+  for _, line in ipairs(lines) do
+    f:write(line .. "\n")
+  end
+  f:close()
+  
+  local augmented = function()
+    os.remove(fname)
+    if done then
+      done()
+    end
+  end
+  M.execute(fname, ft, show_pane, augmented)
+end
+
+function M.execute(filename, ft, open_split, done)
   local buf
   if not execute_win or not execute_buf or not vim.api.nvim_win_is_valid(execute_win) or vim.api.nvim_win_get_buf(execute_win) ~= execute_buf then
-    vim.api.nvim_command("bo 30vnew")
-    execute_win = vim.api.nvim_get_current_win()
     execute_buf = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_win_set_buf(execute_win, execute_buf)
-    vim.api.nvim_command("setlocal nonumber")
-    vim.api.nvim_command("setlocal norelativenumber")
-    vim.api.nvim_command("wincmd p")
+    if open_split then
+      vim.api.nvim_command("bo 30vnew")
+      execute_win = vim.api.nvim_get_current_win()
+      vim.api.nvim_win_set_buf(execute_win, execute_buf)
+      vim.api.nvim_command("setlocal nonumber")
+      vim.api.nvim_command("setlocal norelativenumber")
+      vim.api.nvim_command("wincmd p")
+    end
   end
   buf = execute_buf
   
@@ -36,6 +75,77 @@ function M.execute(filename, ft)
     hl_ns = vim.api.nvim_create_namespace("")
   end
   
+
+  local finish = function(code, signal) 
+		vim.schedule(function()
+      if #output_lines == 0 then
+        vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
+        
+      end
+      
+      -- @rename_output_buffer+=
+      -- vim.api.nvim_command("file [Output]")
+      local new_lines = {}
+      
+      if previous then 
+        local best = {}
+        local best = {}
+        
+        local A = previous
+        local B = output_lines
+        
+        best[0] = {}
+        for j=0,#B do
+          best[0][j] = {}
+        end
+        
+        for i=1,#A do
+          best[i] = {}
+          best[i][0] = {}
+          for j=1,#B do
+            if B[j] ~= A[i] then
+              if #best[i-1][j] > #best[i][j-1] then
+                best[i][j] = best[i-1][j]
+              else
+                best[i][j] = best[i][j-1]
+              end
+            else
+              best[i][j] = vim.deepcopy(best[i-1][j-1])
+              table.insert(best[i][j], j)
+            end
+          end
+        end
+        
+        local lcs = best[#previous][#output_lines]
+        
+        local k = 1
+        for i=1,#output_lines do
+          if k <= #lcs and lcs[k] == i then
+            k = k + 1
+          else
+            table.insert(new_lines, i)
+          end
+        end
+        
+      else
+        for i=1,#output_lines do
+          table.insert(new_lines, i)
+        end
+        
+      end
+      
+      for _,lnum in ipairs(new_lines) do
+        vim.api.nvim_buf_add_highlight(buf, hl_ns, "Search", lnum-1, 0, -1)
+      end
+      
+      previous = output_lines
+      
+      if done then
+        done()
+      end
+		end)
+  end
+
   local handle, err
   if ft == "lua" then
     -- After a lot of sweet and tears, I've found
@@ -47,72 +157,7 @@ function M.execute(filename, ft)
     		stdio = {stdin, stdout, stderr},
     		args = {"--headless", "-u", "NONE", "-c", "luafile " .. filename, "-c", "exit"},
     		cwd = ".",
-    	}, function(code, signal)
-    		vim.schedule(function()
-          if #output_lines == 0 then
-            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-            
-          end
-          
-          -- @rename_output_buffer+=
-          -- vim.api.nvim_command("file [Output]")
-          local new_lines = {}
-          
-          if previous then 
-            local best = {}
-            local best = {}
-            
-            local A = previous
-            local B = output_lines
-            
-            best[0] = {}
-            for j=0,#B do
-              best[0][j] = {}
-            end
-            
-            for i=1,#A do
-              best[i] = {}
-              best[i][0] = {}
-              for j=1,#B do
-                if B[j] ~= A[i] then
-                  if #best[i-1][j] > #best[i][j-1] then
-                    best[i][j] = best[i-1][j]
-                  else
-                    best[i][j] = best[i][j-1]
-                  end
-                else
-                  best[i][j] = vim.deepcopy(best[i-1][j-1])
-                  table.insert(best[i][j], j)
-                end
-              end
-            end
-            
-            local lcs = best[#previous][#output_lines]
-            
-            local k = 1
-            for i=1,#output_lines do
-              if k <= #lcs and lcs[k] == i then
-                k = k + 1
-              else
-                table.insert(new_lines, i)
-              end
-            end
-            
-          else
-            for i=1,#output_lines do
-              table.insert(new_lines, i)
-            end
-            
-          end
-          
-          for _,lnum in ipairs(new_lines) do
-            vim.api.nvim_buf_add_highlight(buf, hl_ns, "Search", lnum-1, 0, -1)
-          end
-          
-          previous = output_lines
-          
-    		end)
-    	end)
+    	}, finish)
     
   elseif ft == "python" then
     handle, err = vim.loop.spawn("python",
@@ -120,144 +165,14 @@ function M.execute(filename, ft)
     		stdio = {stdin, stdout, stderr},
     		args = {filename},
     		cwd = ".",
-    	}, function(code, signal)
-    		vim.schedule(function()
-          if #output_lines == 0 then
-            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-            
-          end
-          
-          -- @rename_output_buffer+=
-          -- vim.api.nvim_command("file [Output]")
-          local new_lines = {}
-          
-          if previous then 
-            local best = {}
-            local best = {}
-            
-            local A = previous
-            local B = output_lines
-            
-            best[0] = {}
-            for j=0,#B do
-              best[0][j] = {}
-            end
-            
-            for i=1,#A do
-              best[i] = {}
-              best[i][0] = {}
-              for j=1,#B do
-                if B[j] ~= A[i] then
-                  if #best[i-1][j] > #best[i][j-1] then
-                    best[i][j] = best[i-1][j]
-                  else
-                    best[i][j] = best[i][j-1]
-                  end
-                else
-                  best[i][j] = vim.deepcopy(best[i-1][j-1])
-                  table.insert(best[i][j], j)
-                end
-              end
-            end
-            
-            local lcs = best[#previous][#output_lines]
-            
-            local k = 1
-            for i=1,#output_lines do
-              if k <= #lcs and lcs[k] == i then
-                k = k + 1
-              else
-                table.insert(new_lines, i)
-              end
-            end
-            
-          else
-            for i=1,#output_lines do
-              table.insert(new_lines, i)
-            end
-            
-          end
-          
-          for _,lnum in ipairs(new_lines) do
-            vim.api.nvim_buf_add_highlight(buf, hl_ns, "Search", lnum-1, 0, -1)
-          end
-          
-          previous = output_lines
-          
-    		end)
-    	end)
+    	}, finish)
   elseif ft == "vim" then
     handle, err = vim.loop.spawn("nvim",
     	{
     		stdio = {stdin, stdout, stderr},
     		args = {"--headless", "-u", "NONE", "-c", "source " .. filename, "-c", "exit"},
     		cwd = ".",
-    	}, function(code, signal)
-    		vim.schedule(function()
-          if #output_lines == 0 then
-            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-            
-          end
-          
-          -- @rename_output_buffer+=
-          -- vim.api.nvim_command("file [Output]")
-          local new_lines = {}
-          
-          if previous then 
-            local best = {}
-            local best = {}
-            
-            local A = previous
-            local B = output_lines
-            
-            best[0] = {}
-            for j=0,#B do
-              best[0][j] = {}
-            end
-            
-            for i=1,#A do
-              best[i] = {}
-              best[i][0] = {}
-              for j=1,#B do
-                if B[j] ~= A[i] then
-                  if #best[i-1][j] > #best[i][j-1] then
-                    best[i][j] = best[i-1][j]
-                  else
-                    best[i][j] = best[i][j-1]
-                  end
-                else
-                  best[i][j] = vim.deepcopy(best[i-1][j-1])
-                  table.insert(best[i][j], j)
-                end
-              end
-            end
-            
-            local lcs = best[#previous][#output_lines]
-            
-            local k = 1
-            for i=1,#output_lines do
-              if k <= #lcs and lcs[k] == i then
-                k = k + 1
-              else
-                table.insert(new_lines, i)
-              end
-            end
-            
-          else
-            for i=1,#output_lines do
-              table.insert(new_lines, i)
-            end
-            
-          end
-          
-          for _,lnum in ipairs(new_lines) do
-            vim.api.nvim_buf_add_highlight(buf, hl_ns, "Search", lnum-1, 0, -1)
-          end
-          
-          previous = output_lines
-          
-    		end)
-    	end)
+    	}, finish)
   end
   assert(handle, err)
   
@@ -397,7 +312,68 @@ function M.execute_buf()
   end
   ft = vim.api.nvim_buf_get_option(0, "ft")
   
-  M.execute(filename, ft)
+  M.execute(filename, ft, true)
+end
+
+function M.test()
+  local results = {}
+  for ft, test in pairs(tests) do
+    local done = false
+    M.execute_lines(vim.split(test.str, "\n"), ft, false, function()
+      done = true
+    end)
+    -- timeout 5 seconds
+    local ok = false
+    for i=1,100 do
+      vim.wait(50)
+      if done then
+        ok = true
+        break
+      end
+    end
+    
+    if not ok then
+      results[ft] = "TIMEOUT"
+    else
+      if vim.deep_equal(previous, test.expected) then
+        results[ft] = "OK"
+      else
+        results[ft] = "FAIL"
+      end
+    end
+    
+  end
+
+  local result_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_win_set_buf(0, result_buf)
+  local lines = {}
+  local text = {}
+  local padding = 30
+  for ft,result in pairs(results) do
+    local line = ft
+    local s = string.len(ft)
+    for i=s+1,padding do
+      line = line .. " "
+    end
+    
+    line = line .. result
+    table.insert(lines, line)
+    table.insert(text, result)
+  end
+  vim.api.nvim_buf_set_lines(result_buf, 0, -1, true, lines)
+  local ns_id = vim.api.nvim_create_namespace("")
+  for i=1,#lines do
+    local hl_group
+    if text[i] == "OK" then
+      hl_group = "Search"
+    elseif text[i] == "TIMEOUT" then
+      hl_group = "Substitute"
+    else
+      hl_group = "IncSearch"
+    end
+    vim.api.nvim_buf_add_highlight(result_buf, ns_id, hl_group, i-1, padding, -1)
+  end
+  
 end
 
 
