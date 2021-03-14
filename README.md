@@ -8,8 +8,15 @@ A script/program runner which outputs the result in a nicely formatted buffer.
 Supported
 ---------
 
-* [x] built-in lua
-* [x] python
+* :seedling: : Supports but still unstable.
+* :deciduous_tree: : Stable.
+
+| Language | Execute | Quickfix |
+|----------|:-------:|:--------:|
+| _Lua_ | :seedling: | :seedling: |
+| _Python_ | :seedling: | :seedling: |
+
+Can be used in conjunction with [ntangle.nvim](https://github.com/jbyuki/ntangle.nvim).
 
 Features
 --------
@@ -37,6 +44,8 @@ You can navigate instantly to the error line.
 Installation
 ------------
 
+Install using your favorite plugin manager. For example using [vim-plug](https://github.com/junegunn/vim-plug).
+
 ```vim
 Plug 'jbyuki/little-runner.nvim'
 ```
@@ -54,3 +63,9 @@ Design
 Guidelines which should guide the development of this plugin.
 
 * The plugin should be functionnal with minimal configuration
+
+Help
+----
+
+* If you encounter any problem, please don't hesitate to open an [Issue](https://github.com/jbyuki/little-runner.nvim/issues).
+* All contributions are welcome.
