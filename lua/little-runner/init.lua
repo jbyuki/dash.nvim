@@ -1,4 +1,4 @@
--- Generated from init.lua.tl, python.lua.tl, quickfix.lua.tl, resize.lua.tl, vimscript.lua.tl using ntangle.nvim
+-- Generated from init.lua.tl, lua-quickfix.lua.tl, vimscript-quickfix.lua.tl, vimscript.lua.tl using ntangle.nvim
 local output_lines = {}
 
 local execute_win, execute_buf
@@ -23,11 +23,8 @@ function M.execute(filename, ft)
   end
   buf = execute_buf
   
-  local execute_win_height = vim.api.nvim_win_get_height(execute_win)
-  
   vim.api.nvim_command("cclose")
   vim.fn.setqflist({})
-  vim.api.nvim_win_set_height(execute_win, execute_win_height)
 
   local stdin = vim.loop.new_pipe(false)
   local stdout = vim.loop.new_pipe(false)
@@ -118,77 +115,6 @@ function M.execute(filename, ft)
     	end)
     
   elseif ft == "python" then
-    handle, err = vim.loop.spawn("python",
-    	{
-    		stdio = {stdin, stdout, stderr},
-    		args = {filename},
-    		cwd = ".",
-    	}, function(code, signal)
-    		vim.schedule(function()
-          if #output_lines == 0 then
-            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-            
-          end
-          
-          -- @rename_output_buffer+=
-          -- vim.api.nvim_command("file [Output]")
-          local new_lines = {}
-          
-          if previous then 
-            local best = {}
-            local best = {}
-            
-            local A = previous
-            local B = output_lines
-            
-            best[0] = {}
-            for j=0,#B do
-              best[0][j] = {}
-            end
-            
-            for i=1,#A do
-              best[i] = {}
-              best[i][0] = {}
-              for j=1,#B do
-                if B[j] ~= A[i] then
-                  if #best[i-1][j] > #best[i][j-1] then
-                    best[i][j] = best[i-1][j]
-                  else
-                    best[i][j] = best[i][j-1]
-                  end
-                else
-                  best[i][j] = vim.deepcopy(best[i-1][j-1])
-                  table.insert(best[i][j], j)
-                end
-              end
-            end
-            
-            local lcs = best[#previous][#output_lines]
-            
-            local k = 1
-            for i=1,#output_lines do
-              if k <= #lcs and lcs[k] == i then
-                k = k + 1
-              else
-                table.insert(new_lines, i)
-              end
-            end
-            
-          else
-            for i=1,#output_lines do
-              table.insert(new_lines, i)
-            end
-            
-          end
-          
-          for _,lnum in ipairs(new_lines) do
-            vim.api.nvim_buf_add_highlight(buf, hl_ns, "Search", lnum-1, 0, -1)
-          end
-          
-          previous = output_lines
-          
-    		end)
-    	end)
   elseif ft == "vim" then
     handle, err = vim.loop.spawn("nvim",
     	{
@@ -338,8 +264,41 @@ function M.execute(filename, ft)
           end
         end
         
+        if ft == "vim" then
+          local filename
+          local in_error = false
+          local lnum
+          local errors = {}
+          for line in vim.gsplit(data, "\r*\n") do
+            if string.match(line, "^Error detected while processing") then
+              filename = string.match(line, "^Error detected while processing (.+):")
+              
+              in_error = true
+            elseif in_error and string.match(line, "^line") then
+              lnum = string.match(line, "^line (%d+)")
+              
+            elseif in_error and string.match(line, "^E%d+: ") then
+              local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
+              
+              table.insert(errors, {
+                filename = filename,
+                lnum = lnum,
+                nr = errnum,
+                text = errmsg,
+                type = 'E',
+              })
+              
+            end
+          end
+        
+          vim.fn.setqflist(errors)
+          if #errors > 0 then
+            open_quickfix = true
+          end
+        end
+        
         if open_quickfix then
-          vim.api.nvim_command("copen")
+          -- vim.api.nvim_command("copen")
         end
         
       end

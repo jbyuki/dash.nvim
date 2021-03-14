@@ -25,7 +25,7 @@ open_quickfix = true
 
 @open_quickfix+=
 if open_quickfix then
-  vim.api.nvim_command("copen")
+  -- vim.api.nvim_command("copen")
 end
 
 @close_quickfix_if_open+=

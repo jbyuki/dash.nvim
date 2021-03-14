@@ -15,7 +15,7 @@ Supported
 |----------|:-------:|:--------:|
 | _Lua_ | :seedling: | :seedling: |
 | _Python_ | :seedling: | |
-| _Vimscript_ | :seedling: | |
+| _Vimscript_ | :seedling: | :seedling: |
 
 Can be used in conjunction with [ntangle.nvim](https://github.com/jbyuki/ntangle.nvim).
 
