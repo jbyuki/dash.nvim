@@ -5,8 +5,6 @@ A script/program runner which outputs the result in a nicely formatted buffer.
 
 **This is still work-in-progress.** 
 
-It only supports lua currently.
-
 Features
 --------
 
@@ -56,3 +54,4 @@ Supported
 ---------
 
 * [x] built-in lua
+* [x] python
