@@ -5,6 +5,12 @@ A script/program runner which outputs the result in a nicely formatted buffer.
 
 **This is still work-in-progress.** 
 
+Supported
+---------
+
+* [x] built-in lua
+* [x] python
+
 Features
 --------
 
@@ -48,10 +54,3 @@ Design
 Guidelines which should guide the development of this plugin.
 
 * The plugin should be functionnal with minimal configuration
-
-
-Supported
----------
-
-* [x] built-in lua
-* [x] python
