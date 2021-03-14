@@ -16,24 +16,21 @@ function M.execute(filename, ft)
   @save_split_size
   @close_quickfix_if_open
   @restore_split_size_if_quickfix_close
+
+  @create_pipes
+  @clear_all_highlight
+  local handle, err
   if ft == "lua" then
-    @create_pipes
-    @clear_all_highlight
     @spawn_neovim_process
-    @if_spawn_error_print
-    @register_pipe_callback_neovim
-    if handle then
-      @clear_output_lines
-    end
   elseif ft == "python" then
-    @create_pipes
-    @clear_all_highlight
     @spawn_python_instance
-    @if_spawn_error_print
-    @register_pipe_callback_neovim
-    if handle then
-      @clear_output_lines
-    end
+  elseif ft == "vim" then
+    @spawn_neovim_process_for_vimscript
+  end
+  @if_spawn_error_print
+  @register_pipe_callback_neovim
+  if handle then
+    @clear_output_lines
   end
 end
 
@@ -47,7 +44,7 @@ local stderr = vim.loop.new_pipe(false)
 -- that neovim only outputs to stdout on exit
 -- that's why the -c exit is crucial,
 -- otherwise nothing is captured.
-local handle, err = vim.loop.spawn("nvim",
+handle, err = vim.loop.spawn("nvim",
 	{
 		stdio = {stdin, stdout, stderr},
 		args = {"--headless", "-u", "NONE", "-c", "luafile " .. filename, "-c", "exit"},

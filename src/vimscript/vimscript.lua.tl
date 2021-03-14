@@ -1,9 +1,9 @@
 ##../little-runner
-@spawn_python_instance+=
-handle, err = vim.loop.spawn("python",
+@spawn_neovim_process_for_vimscript+=
+handle, err = vim.loop.spawn("nvim",
 	{
 		stdio = {stdin, stdout, stderr},
-		args = {filename},
+		args = {"--headless", "-u", "NONE", "-c", "source " .. filename, "-c", "exit"},
 		cwd = ".",
 	}, function(code, signal)
 		vim.schedule(function()
