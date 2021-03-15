@@ -50,37 +50,54 @@ end
 
 function M.execute(filename, ft, open_split, done)
   local buf
-  if not execute_win or not execute_buf or not vim.api.nvim_win_is_valid(execute_win) or vim.api.nvim_win_get_buf(execute_win) ~= execute_buf then
-    execute_buf = vim.api.nvim_create_buf(false, true)
-    if open_split then
-      local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
-      local split
-      local win_size
-      local percent = 0.2
-      if width > 2*height then
-        split = "vnew"
-        win_size = math.floor(width*percent)
-      else
-        split = "new"
-        win_size = math.floor(height*percent)
-      end
-  
-      vim.api.nvim_command("bo " .. win_size .. split)
-      execute_win = vim.api.nvim_get_current_win()
-      vim.api.nvim_win_set_buf(execute_win, execute_buf)
-      vim.api.nvim_command("setlocal nonumber")
-      vim.api.nvim_command("setlocal norelativenumber")
-      vim.api.nvim_command("wincmd p")
+  if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+    print("new window!")
+    local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
+    local split
+    local win_size
+    local percent = 0.2
+    if width > 2*height then
+      split = "vsp"
+      win_size = math.floor(width*percent)
+    else
+      split = "sp"
+      win_size = math.floor(height*percent)
     end
+    
+    vim.api.nvim_command("bo " .. win_size .. split)
+    execute_win = vim.api.nvim_get_current_win()
+    
+  end
+  
+  if open_split then
+    vim.api.nvim_set_current_win(execute_win)
+    vim.api.nvim_command("enew")
+    vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile cursorline nospell")
+    vim.api.nvim_command("setlocal nonumber")
+    vim.api.nvim_command("setlocal norelativenumber")
+    execute_buf = vim.api.nvim_win_get_buf(0)
+    
+    local bufname
+    while true do
+      bufname = "Out #" .. out_counter
+      local oldbufnr = vim.fn.bufnr(bufname)
+      if oldbufnr == -1 then
+        break
+      end
+      out_counter = out_counter + 1
+    end
+    vim.api.nvim_buf_set_name(execute_buf, bufname)
+    out_counter = out_counter + 1
+    vim.api.nvim_command("wincmd p")
+    
+    if previous then
+      vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
+    end
+  else
+    execute_buf = vim.api.nvim_create_buf(false, true)
+    
   end
   buf = execute_buf
-  local bufname = "Out #" .. out_counter
-  local oldbufnr = vim.fn.bufnr(bufname)
-  if oldbufnr ~= -1 then
-    vim.api.nvim_command("bw " .. oldbufnr)
-  end
-  vim.api.nvim_buf_set_name(execute_buf, bufname)
-  out_counter = out_counter + 1
   
   local execute_win_height = vim.api.nvim_win_get_height(execute_win)
   
@@ -105,6 +122,7 @@ function M.execute(filename, ft, open_split, done)
         vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
         
       end
+      
       local new_lines = {}
       
       if previous then 

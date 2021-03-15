@@ -100,31 +100,47 @@ end)
 local execute_win, execute_buf
 
 @create_split_if_none+=
-if not execute_win or not execute_buf or not vim.api.nvim_win_is_valid(execute_win) or vim.api.nvim_win_get_buf(execute_win) ~= execute_buf then
-  execute_buf = vim.api.nvim_create_buf(false, true)
-  if open_split then
-    local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
-    local split
-    local win_size
-    local percent = 0.2
-    if width > 2*height then
-      split = "vnew"
-      win_size = math.floor(width*percent)
-    else
-      split = "new"
-      win_size = math.floor(height*percent)
-    end
+if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+  print("new window!")
+  @create_new_window_for_execution
+end
 
-    vim.api.nvim_command("bo " .. win_size .. split)
-    execute_win = vim.api.nvim_get_current_win()
-    vim.api.nvim_win_set_buf(execute_win, execute_buf)
-    vim.api.nvim_command("setlocal nonumber")
-    vim.api.nvim_command("setlocal norelativenumber")
-    vim.api.nvim_command("wincmd p")
-  end
+if open_split then
+  @create_new_buffer_into_window
+  @set_previous_content_in_the_meantime
+else
+  @create_new_scratch_buffer
 end
 buf = execute_buf
+
+@create_new_window_for_execution+=
+local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
+local split
+local win_size
+local percent = 0.2
+if width > 2*height then
+  split = "vsp"
+  win_size = math.floor(width*percent)
+else
+  split = "sp"
+  win_size = math.floor(height*percent)
+end
+
+vim.api.nvim_command("bo " .. win_size .. split)
+execute_win = vim.api.nvim_get_current_win()
+
+@create_new_buffer_into_window+=
+vim.api.nvim_set_current_win(execute_win)
+vim.api.nvim_command("enew")
+vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile cursorline nospell")
+vim.api.nvim_command("setlocal nonumber")
+vim.api.nvim_command("setlocal norelativenumber")
+execute_buf = vim.api.nvim_win_get_buf(0)
 @rename_output_buffer
+vim.api.nvim_command("wincmd p")
+
+@create_new_scratch_buffer+=
+execute_buf = vim.api.nvim_create_buf(false, true)
 
 @clear_output_window+=
 vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
@@ -279,4 +295,9 @@ filename = require"ntangle".getRootFilename()
 @if_no_output_clear_console+=
 if #output_lines == 0 then
   @clear_output_window
+end
+
+@set_previous_content_in_the_meantime+=
+if previous then
+  vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
 end
