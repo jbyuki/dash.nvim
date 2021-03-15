@@ -1,4 +1,4 @@
--- Generated from execute_buf.lua.tl, init.lua.tl, lua-quickfix.lua.tl, lua-test.lua.tl, python-test.lua.tl, python.lua.tl, resize.lua.tl, test_suite.lua.tl, vimscript-quickfix.lua.tl, vimscript-test.lua.tl, vimscript.lua.tl using ntangle.nvim
+-- Generated from execute_buf.lua.tl, init.lua.tl, lua-quickfix.lua.tl, lua-test.lua.tl, python-test.lua.tl, python.lua.tl, resize.lua.tl, test_suite.lua.tl, title.lua.tl, vimscript-quickfix.lua.tl, vimscript-test.lua.tl, vimscript.lua.tl using ntangle.nvim
 local output_lines = {}
 
 local execute_win, execute_buf
@@ -11,6 +11,7 @@ local hl_ns
 
 local tests = {}
 
+local out_counter = 1
 tests["lua"] = {
   str = [[
 print("hello")
@@ -73,6 +74,13 @@ function M.execute(filename, ft, open_split, done)
     end
   end
   buf = execute_buf
+  local bufname = "Out #" .. out_counter
+  local oldbufnr = vim.fn.bufnr(bufname)
+  if oldbufnr ~= -1 then
+    vim.api.nvim_command("bw " .. oldbufnr)
+  end
+  vim.api.nvim_buf_set_name(execute_buf, bufname)
+  out_counter = out_counter + 1
   
   local execute_win_height = vim.api.nvim_win_get_height(execute_win)
   
@@ -97,9 +105,6 @@ function M.execute(filename, ft, open_split, done)
         vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
         
       end
-      
-      -- @rename_output_buffer+=
-      -- vim.api.nvim_command("file [Output]")
       local new_lines = {}
       
       if previous then 
