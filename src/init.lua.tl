@@ -101,7 +101,6 @@ local execute_win, execute_buf
 
 @create_split_if_none+=
 if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
-  print("new window!")
   @create_new_window_for_execution
 end
 

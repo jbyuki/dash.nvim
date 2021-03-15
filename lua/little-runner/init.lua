@@ -51,7 +51,6 @@ end
 function M.execute(filename, ft, open_split, done)
   local buf
   if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
-    print("new window!")
     local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
     local split
     local win_size
