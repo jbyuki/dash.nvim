@@ -26,7 +26,7 @@ Features
 
 A basic diff algorithm highlights all the newly inserted lines in the output buffer. This is useful to quickly see which lines changes compared to the previous execution.
 
-<img src="https://i.postimg.cc/m2tGfrsx/Untitled-Project.gif" width="500">
+<img src="https://i.postimg.cc/TY2GCX0S/Untitled-Project.gif" width="500">
 
 ### Infinite Loop Guard
 
@@ -34,7 +34,7 @@ The execution is done completely is a sandboxed environnement. For lua, it spawn
 
 This is an interesting workaround because executing a infinite loop through `luafile` will freeze the client normally. Lua plugins developer are most likely familar with it. Although **little-runner.nvim** sandboxed execution is interesting, it can't be applied to plugin development.
 
-<img src="https://i.postimg.cc/K8L3JJKW/Untitled-Project.gif" width="500">
+<img src="https://i.postimg.cc/Qdkg0Wqg/Untitled-Project.gif" width="500">
 
 ### Fill Quickfix 
 
