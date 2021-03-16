@@ -1,4 +1,4 @@
-##../little-runner
+##../dash
 @script_variables+=
 local out_counter = 1
 @rename_output_buffer+=

@@ -1,5 +1,5 @@
-##little-runner
-@../lua/little-runner/init.lua=
+##dash
+@../lua/dash/init.lua=
 @script_variables
 @add_tests
 local M = {}
@@ -161,22 +161,22 @@ for line in vim.gsplit(data, "\r*\n") do
   table.insert(output_lines, line)
   if #output_lines >= MAX_LINES then
     @abort_script
-    error("little-runner.nvim: too many lines. Abort script")
+    error("dash.nvim: too many lines. Abort script")
   end
 end
 
-@../plugin/little-runner.vim=
+@../plugin/dash.vim=
 @check_if_plugin_already_loaded
 @register_vim_commands
 
 @check_if_plugin_already_loaded+=
-if exists('g:loaded_little_runner')
+if exists('g:loaded_dash')
     finish
 endif
-let g:loaded_little_runner= 1
+let g:loaded_dash= 1
 
 @register_vim_commands+=
-command! -nargs=0 -bar LittleRun lua require"little-runner".execute_buf()
+command! -nargs=0 -bar DashRun lua require"dash".execute_buf()
 
 @o+=
 local a

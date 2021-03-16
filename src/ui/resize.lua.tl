@@ -1,4 +1,4 @@
-##../little-runner
+##../dash
 @save_split_size+=
 local execute_win_height = vim.api.nvim_win_get_height(execute_win)
 

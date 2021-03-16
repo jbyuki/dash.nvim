@@ -1,4 +1,4 @@
-##../little-runner
+##../dash
 @add_tests+=
 tests["lua"] = {
   str = [[

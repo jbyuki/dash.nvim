@@ -1,4 +1,4 @@
-##../little-runner
+##../dash
 @spawn_python_instance+=
 handle, err = vim.loop.spawn("python",
 	{

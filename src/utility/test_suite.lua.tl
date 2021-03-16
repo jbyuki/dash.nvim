@@ -1,4 +1,4 @@
-##../little-runner
+##../dash
 @script_variables+=
 local tests = {}
 

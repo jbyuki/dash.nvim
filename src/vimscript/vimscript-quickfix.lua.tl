@@ -1,4 +1,4 @@
-##../little-runner
+##../dash
 @parse_error_for_quickfix+=
 if ft == "vim" then
   local filename

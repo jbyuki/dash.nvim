@@ -1,4 +1,4 @@
-##../little-runner
+##../dash
 @implement+=
 function M.execute_lines(lines, ft, show_pane, done)
   @write_to_temporary_file

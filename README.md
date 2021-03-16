@@ -1,7 +1,7 @@
-little-runner.nvim
+dash.nvim
 ==================
 
-A script/program runner which outputs the result in a nicely formatted buffer.
+A fast and safe script runner which outputs the result in a nicely formatted buffer.
 
 **This is still work-in-progress.** 
 
@@ -48,14 +48,14 @@ Installation
 Install using your favorite plugin manager. For example using [vim-plug](https://github.com/junegunn/vim-plug).
 
 ```vim
-Plug 'jbyuki/little-runner.nvim'
+Plug 'jbyuki/dash.nvim'
 ```
 
 Usage
 -----
 
 ```vim
-:LittleRun
+:DashRun
 ```
 
 Design
@@ -68,5 +68,5 @@ Guidelines which should guide the development of this plugin.
 Help
 ----
 
-* If you encounter any problem, please don't hesitate to open an [Issue](https://github.com/jbyuki/little-runner.nvim/issues).
+* If you encounter any problem, please don't hesitate to open an [Issue](https://github.com/jbyuki/dash.nvim/issues).
 * All contributions are welcome.

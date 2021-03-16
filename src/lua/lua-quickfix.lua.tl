@@ -1,4 +1,4 @@
-##../little-runner
+##../dash
 @parse_error_for_quickfix+=
 if ft == "lua" then
   for line in vim.gsplit(data, "\r*\n") do

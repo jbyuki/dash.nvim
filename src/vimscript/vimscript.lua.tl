@@ -1,4 +1,4 @@
-##../little-runner
+##../dash
 @spawn_neovim_process_for_vimscript+=
 handle, err = vim.loop.spawn("nvim",
 	{
