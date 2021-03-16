@@ -127,6 +127,7 @@ end
 
 vim.api.nvim_command("bo " .. win_size .. split)
 execute_win = vim.api.nvim_get_current_win()
+@set_window_dimension_fix
 
 @create_new_buffer_into_window+=
 vim.api.nvim_set_current_win(execute_win)
