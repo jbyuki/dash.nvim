@@ -1,4 +1,4 @@
--- Generated from init.lua.tl, resize.lua.tl using ntangle.nvim
+-- Generated from grey.lua.tl, init.lua.tl, resize.lua.tl using ntangle.nvim
 local output_lines = {}
 
 local execute_win, execute_buf
@@ -65,9 +65,19 @@ function M.execute(filename, ft, open_split, done)
     hl_ns = vim.api.nvim_create_namespace("")
   end
   
+  local grey_id = vim.api.nvim_create_namespace("")
+  local linecount = vim.api.nvim_buf_line_count(buf)
+  for i=1,linecount  do
+    vim.api.nvim_buf_add_highlight(buf, grey_id, "NonText", i-1, 0, -1)
+  end
+  
 
   local finish = function(code, signal) 
 		vim.schedule(function()
+      if #output_lines == 0 then
+        vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
+      end
+      
       if #output_lines == 0 then
         vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
         
@@ -159,6 +169,7 @@ function M.execute(filename, ft, open_split, done)
         if #output_lines == 0 then
           vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
           
+          vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
         end
         
         for line in vim.gsplit(data, "\r*\n") do
@@ -189,6 +200,7 @@ function M.execute(filename, ft, open_split, done)
         if #output_lines == 0 then
           vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
           
+          vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
         end
         
         for line in vim.gsplit(data, "\r*\n") do

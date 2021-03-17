@@ -20,9 +20,11 @@ function M.execute(filename, ft, open_split, done)
 
   @create_pipes
   @clear_all_highlight
+  @put_grey_highlight_over
 
   local finish = function(code, signal) 
 		vim.schedule(function()
+      @if_no_output_clear_grey_highlight
       @if_no_output_clear_console
       @compare_with_previous_output
       @higlight_differences
@@ -151,6 +153,7 @@ local MAX_LINES = 10000
 @append_output_to_buf+=
 if #output_lines == 0 then
   @clear_output_window
+  @clear_grey_highlight
 end
 
 for line in vim.gsplit(data, "\r*\n") do

@@ -1,4 +1,4 @@
-" Generated from init.lua.tl, resize.lua.tl using ntangle.nvim
+" Generated from grey.lua.tl, init.lua.tl, resize.lua.tl using ntangle.nvim
 if exists('g:loaded_dash')
     finish
 endif
