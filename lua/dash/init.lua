@@ -35,7 +35,7 @@ function M.execute(filename, ft, open_split, done)
   if open_split then
     vim.api.nvim_set_current_win(execute_win)
     vim.api.nvim_command("enew")
-    vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile cursorline nospell")
+    vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile nospell")
     vim.api.nvim_command("setlocal nonumber")
     vim.api.nvim_command("setlocal norelativenumber")
     execute_buf = vim.api.nvim_win_get_buf(0)
