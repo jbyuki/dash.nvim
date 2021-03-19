@@ -1,4 +1,4 @@
--- Generated from grey.lua.tl, init.lua.tl, resize.lua.tl using ntangle.nvim
+-- Generated from grey.lua.tl, init.lua.tl, resize.lua.tl, title.lua.tl using ntangle.nvim
 local output_lines = {}
 
 local execute_win, execute_buf
@@ -9,6 +9,7 @@ local previous
 
 local hl_ns
 
+local out_counter = 1
 local M = {}
 function M.execute(filename, ft, open_split, done)
   local buf
@@ -39,6 +40,18 @@ function M.execute(filename, ft, open_split, done)
     vim.api.nvim_command("setlocal nonumber")
     vim.api.nvim_command("setlocal norelativenumber")
     execute_buf = vim.api.nvim_win_get_buf(0)
+    
+    local bufname
+    while true do
+      bufname = "Out #" .. out_counter
+      local oldbufnr = vim.fn.bufnr(bufname)
+      if oldbufnr == -1 then
+        break
+      end
+      out_counter = out_counter + 1
+    end
+    vim.api.nvim_buf_set_name(execute_buf, bufname)
+    out_counter = out_counter + 1
     vim.api.nvim_command("wincmd p")
     
     if previous then
