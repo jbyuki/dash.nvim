@@ -2,6 +2,7 @@
 @../lua/dash/init.lua=
 @script_variables
 @add_tests
+@define_signs
 local M = {}
 @implement
 
