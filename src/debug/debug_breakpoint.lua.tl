@@ -4,16 +4,16 @@ function M.toggle_breakpoint()
   @get_current_line_number
   @get_breakpoint_at_current_line
   @toggle_breakpoint_sign_at_current_line
-  -- if debug_running then
-    -- @send_breakpoint_to_debug_neovim
-  -- end
+  if debug_running then
+    @send_breakpoint_to_debug_neovim
+  end
 end
 
 function M.clear_breakpoints()
   @clear_all_breakpoint_signs
-  -- if debug_running then
-    -- @clear_breapoints_in_debug_neovim
-  -- end
+  if debug_running then
+    @clear_breapoints_in_debug_neovim
+  end
 end
 
 @get_current_line_number+=

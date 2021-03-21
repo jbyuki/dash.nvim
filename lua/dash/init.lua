@@ -109,17 +109,19 @@ function M.toggle_breakpoint()
     vim.fn.sign_unplace("dashBreakpoint", { buffer = bufname, id = signs[1].signs[1].id })
   end
   
-  -- if debug_running then
-    -- @send_breakpoint_to_debug_neovim
-  -- end
+  if debug_running then
+    vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "if dash_breakpoint[" .. lnum .. "] then dash_breakpoint[" .. lnum .. "] = nil else dash_breakpoint[" .. lnum .. "] = true end" , {})
+    
+  end
 end
 
 function M.clear_breakpoints()
   vim.fn.sign_unplace("dashBreakpoint", { buffer = bufname })
   
-  -- if debug_running then
-    -- @clear_breapoints_in_debug_neovim
-  -- end
+  if debug_running then
+    vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_breakpoint = {}" , {})
+    
+  end
 end
 
 function M.continue()
