@@ -11,13 +11,15 @@ Supported
 * :seedling: : Supports but still unstable.
 * :deciduous_tree: : Stable.
 
-| Language | Execute | Quickfix |
-|----------|:-------:|:--------:|
-| _Lua_ | :seedling: | :seedling: |
-| _Python_ | :seedling: | |
-| _Vimscript_ | :seedling: | :seedling: |
+| Language | Execute | Quickfix | Debugger |
+|----------|:-------:|:--------:|:--------:|
+| _Lua_ | :seedling: | :seedling: | :seedling: |
+| _Python_ | :seedling: | | |
+| _Vimscript_ | :seedling: | :seedling: | |
 
 Can be used in conjunction with [ntangle.nvim](https://github.com/jbyuki/ntangle.nvim).
+
+**Remark**: I'm still debating if the lua debugger belongs here. But for convenience, I won't do a separate plugin for now.
 
 Features
 --------
@@ -47,6 +49,13 @@ You can navigate instantly to the error line.
 It supports multiple languages out of the box. More support will be added as the plugin is evolving.
 
 <img src="https://i.postimg.cc/x1ZyCnqb/Untitled-Project.gif" width="500">
+
+### Debugger
+
+Vimscript has some good debugging support but lua has only `debug.debug()` which is insufficient in my opinion. This still breaks often and lacks features but offers some support for debugging. It's a prototype for more to come.
+
+<img src="https://i.postimg.cc/qvfrwzY0/Untitled-Project.gif" width="500">
+
 
 Installation
 ------------
