@@ -209,7 +209,6 @@ function M.debug_buf()
 end
 
 function M.debug(filename, ft)
-  print("Start debug session")
   if ft == "lua" then
     if neovim_handle then
       neovim_handle:kill()
@@ -232,7 +231,6 @@ function M.debug(filename, ft)
     	}, function(code, signal)
         vim.schedule(function()
           debug_running = false
-          print("We are done!")
         end)
       end
     )
@@ -244,25 +242,19 @@ function M.debug(filename, ft)
       debug_running = true
     end
     
-    
-    vim.wait(100)
-    
 
     neovim_conn = nil
     for i=1,10 do
-      neovim_conn = vim.fn.sockconnect("pipe", pipe_address, { rpc = true })
-      if not neovim_conn then
-        print("Could not connect to debug neovim instance")
-      end
+      local err, success
+      success, neovim_conn = pcall(vim.fn.sockconnect, "pipe", pipe_address, { rpc = true })
       
-      if neovim_conn then
+      if success then
         break
       end
       vim.wait(200)
     end
 
     assert(neovim_conn, "Could not establish connection with debug instance")
-
 
     -- the name serverstart() is kind of
     -- misleading because it doesn't actually
@@ -318,7 +310,6 @@ function M.debug(filename, ft)
       end
     end)
     
-    print("Done!")
 
     -- @close_connect_to_neovim_debug
     -- @kill_neovim_instance_for_debug

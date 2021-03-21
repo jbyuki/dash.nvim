@@ -20,7 +20,6 @@ local neovim_conn
 
 @implement+=
 function M.debug(filename, ft)
-  print("Start debug session")
   if ft == "lua" then
     @kill_previous_neovim_instance
 
@@ -29,14 +28,13 @@ function M.debug(filename, ft)
     neovim_conn = nil
     for i=1,10 do
       @connect_to_neovim_debug
-      if neovim_conn then
+      if success then
         break
       end
       vim.wait(200)
     end
 
     assert(neovim_conn, "Could not establish connection with debug instance")
-
 
     @get_pipe_address_for_current_instance
     @send_pipe_address_to_debug_instance
@@ -50,7 +48,6 @@ function M.debug(filename, ft)
     @execute_lua_in_neovim_for_debug
 
     @start_timer_for_break
-    print("Done!")
 
     -- @close_connect_to_neovim_debug
     -- @kill_neovim_instance_for_debug

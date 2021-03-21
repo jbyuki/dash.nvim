@@ -20,7 +20,6 @@ neovim_handle, err = vim.loop.spawn("nvim",
 	}, function(code, signal)
     vim.schedule(function()
       debug_running = false
-      print("We are done!")
     end)
   end
 )
@@ -31,9 +30,6 @@ if not neovim_handle then
 else
   debug_running = true
 end
-
-
-vim.wait(100)
 
 @kill_previous_neovim_instance+=
 if neovim_handle then
@@ -46,10 +42,8 @@ neovim_handle:kill()
 neovim_handle = nil
 
 @connect_to_neovim_debug+=
-neovim_conn = vim.fn.sockconnect("pipe", pipe_address, { rpc = true })
-if not neovim_conn then
-  print("Could not connect to debug neovim instance")
-end
+local err, success
+success, neovim_conn = pcall(vim.fn.sockconnect, "pipe", pipe_address, { rpc = true })
 
 @close_connect_to_neovim_debug+=
 vim.fn.chanclose(neovim_conn)
