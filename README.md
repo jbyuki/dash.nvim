@@ -56,6 +56,12 @@ Vimscript has some good debugging support but lua has only `debug.debug()` which
 
 <img src="https://i.postimg.cc/qvfrwzY0/Untitled-Project.gif" width="500">
 
+Start the debugger with `:DashDebug`.
+
+* Place breakpoint: `require"dash".toggle_breakpoint()`
+* Step: `require"dash".step()`
+* Continue: `require"dash".continue()`
+* Inspect variable: `require"dash".inspect()`
 
 Installation
 ------------
