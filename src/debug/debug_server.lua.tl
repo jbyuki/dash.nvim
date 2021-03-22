@@ -43,6 +43,7 @@ function M.debug(filename, ft)
     @run_debug_client_in_neovim_instance
 
     @send_all_breakpoints
+    @send_filename_for_source
 
     @setup_debug_hook
     @execute_lua_in_neovim_for_debug

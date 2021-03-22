@@ -22,6 +22,7 @@ end
 local bufname = vim.api.nvim_buf_get_name(0)
 local prefix, l = unpack(tangled[cur_lnum])
 signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
+vim.api.nvim_command("normal " .. l.lnum .. "ggzz")
 
 @send_breakpoint_to_debug_neovim_tangled+=
 local lnums = mapping[lnum]

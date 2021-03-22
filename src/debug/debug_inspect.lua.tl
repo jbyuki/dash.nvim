@@ -1,13 +1,21 @@
 ##../dash
 @fill_vars_with_local_variables+=
 local stack = 2
-local li = 1
-while true do
-  local ln, lv = debug.getlocal(stack, li)
-  li = li + 1
-  if not ln then break end
+local stack_valid = true
+while stack_valid do
+  local li = 1
+  while true do
+    local lv, lv
+    stack_valid, ln, lv = pcall(debug.getlocal, stack, li)
+    if not stack_valid then
+      break
+    end
+    li = li + 1
+    if not ln then break end
 
-  dash_debug_vars[ln] = lv
+    dash_debug_vars[ln] = lv
+  end
+  stack = stack + 1
 end
 
 @set_globals_as_metatable+=
@@ -16,19 +24,18 @@ setmetatable(dash_debug_vars, {
 })
 
 @transform_inspect_name_expression+=
-local start = string.find(dash_inspect_name, "[.%[]")
-if start then
-  local rest = string.sub(dash_inspect_name, start)
-  local start = string.sub(dash_inspect_name, 1, start-1)
-  dash_inspect_name = "return dash_debug_vars['" .. start .. "']" .. rest
-else
-  dash_inspect_name = "return dash_debug_vars['" .. dash_inspect_name .. "']"
-end
+local str = dash_inspect_name:gsub('%a[a-zA-Z0-9_]*', 'dash_debug_vars["%0"]')
+str = str:gsub('%.dash_debug_vars%["(.-)"%]', '.%1')
+dash_inspect_name = "return " .. str
 
 @execute_inspect_name_expression+=
 local f = loadstring(dash_inspect_name)
 if f then
-  dash_inspect_result = f()
+  local ret
+  ret, dash_inspect_result = pcall(f)
+  if not ret then
+    @parse_error_message_debug
+  end
 end
 
 @implement+=
@@ -84,3 +91,6 @@ assert(srow == erow, "only single row selection are supported!")
 
 local line = vim.api.nvim_buf_get_lines(0, srow-1, srow, true)[1]
 local name = string.sub(line, scol, ecol)
+
+@parse_error_message_debug+=
+dash_inspect_result = string.match(dash_inspect_result, ".*:.*: (.*)")

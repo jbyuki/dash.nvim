@@ -5,6 +5,7 @@ vim.fn.sign_define("dashPCDef", { text = "PC", texthl = "debugPC", linehl = "deb
 @put_sign_for_pc+=
 local bufname = vim.api.nvim_buf_get_name(0)
 signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
+vim.api.nvim_command("normal " .. cur_lnum .. "ggzz")
 
 @script_variables+=
 local signPC

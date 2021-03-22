@@ -26,9 +26,16 @@ vim.fn.rpcnotify(neovim_conn, "nvim_exec", "luafile " .. filename, false)
 @define_debug_hooks+=
 dash_current_line = nil
 previous_lnum = nil
+dash_filename = nil
+dash_return_filename = nil
 
 function dash_every_line(event, lnum)
   if lnum == 0 or lnum == previous_lnum then
+    return
+  end
+
+  local info = debug.getinfo(2, 'S')
+  if info.source ~= "@" .. dash_filename then
     return
   end
 
@@ -64,3 +71,6 @@ vim.fn.rpcnotify(dash_debug_conn, "nvim_exec_lua", "dash_breaked = true", {})
 
 @script_variables+=
 dash_breaked = false
+
+@send_filename_for_source+=
+vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_filename = " .. vim.inspect(filename), {})

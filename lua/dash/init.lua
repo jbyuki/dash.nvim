@@ -3,9 +3,16 @@ local client_code_fn
 local client_code = [[ 
 dash_current_line = nil
 previous_lnum = nil
+dash_filename = nil
+dash_return_filename = nil
 
 function dash_every_line(event, lnum)
   if lnum == 0 or lnum == previous_lnum then
+    return
+  end
+
+  local info = debug.getinfo(2, 'S')
+  if info.source ~= "@" .. dash_filename then
     return
   end
 
@@ -20,31 +27,38 @@ function dash_every_line(event, lnum)
       if dash_inspect_name then
         dash_debug_vars = {}
         local stack = 2
-        local li = 1
-        while true do
-          local ln, lv = debug.getlocal(stack, li)
-          li = li + 1
-          if not ln then break end
+        local stack_valid = true
+        while stack_valid do
+          local li = 1
+          while true do
+            local lv, lv
+            stack_valid, ln, lv = pcall(debug.getlocal, stack, li)
+            if not stack_valid then
+              break
+            end
+            li = li + 1
+            if not ln then break end
         
-          dash_debug_vars[ln] = lv
+            dash_debug_vars[ln] = lv
+          end
+          stack = stack + 1
         end
         
         setmetatable(dash_debug_vars, {
           __index = _G
         })
         
-        local start = string.find(dash_inspect_name, "[.%[]")
-        if start then
-          local rest = string.sub(dash_inspect_name, start)
-          local start = string.sub(dash_inspect_name, 1, start-1)
-          dash_inspect_name = "return dash_debug_vars['" .. start .. "']" .. rest
-        else
-          dash_inspect_name = "return dash_debug_vars['" .. dash_inspect_name .. "']"
-        end
+        local str = dash_inspect_name:gsub('%a[a-zA-Z0-9_]*', 'dash_debug_vars["%0"]')
+        str = str:gsub('%.dash_debug_vars%["(.-)"%]', '.%1')
+        dash_inspect_name = "return " .. str
         
         local f = loadstring(dash_inspect_name)
         if f then
-          dash_inspect_result = f()
+          local ret
+          ret, dash_inspect_result = pcall(f)
+          if not ret then
+            dash_inspect_result = string.match(dash_inspect_result, ".*:.*: (.*)")
+          end
         end
         
         dash_inspect_result_done = true
@@ -59,6 +73,7 @@ end
 ]]
 
 dash_breaked = false
+
 local neovim_port = 81489
 local pipe_address
 local neovim_handle
@@ -169,6 +184,8 @@ function M.continue()
       if dash_breaked then
         vim.schedule(function()
           local cur_lnum = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_current_line]], {})
+          
+          local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
           local name = vim.api.nvim_buf_get_name(0)
           local extext = vim.fn.fnamemodify(name, ":e:e")
           local tangle = string.match(extext, ".*%.tl")
@@ -187,10 +204,12 @@ function M.continue()
             local bufname = vim.api.nvim_buf_get_name(0)
             local prefix, l = unpack(tangled[cur_lnum])
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
+            vim.api.nvim_command("normal " .. l.lnum .. "ggzz")
             
           else
             local bufname = vim.api.nvim_buf_get_name(0)
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
+            vim.api.nvim_command("normal " .. cur_lnum .. "ggzz")
             
           end
           print("Debugger breaked on line " .. cur_lnum .. "!")
@@ -257,6 +276,7 @@ function M.vinspect()
   
   local line = vim.api.nvim_buf_get_lines(0, srow-1, srow, true)[1]
   local name = string.sub(line, scol, ecol)
+  
   vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_result_done = false", {})
   vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_result = nil", {})
   vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_name = " .. vim.inspect(name), {})
@@ -424,6 +444,7 @@ function M.debug(filename, ft)
       end
     end
     
+    vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_filename = " .. vim.inspect(filename), {})
 
     vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[debug.sethook(dash_every_line, "l", 0)]], {})
     
@@ -435,6 +456,8 @@ function M.debug(filename, ft)
       if dash_breaked then
         vim.schedule(function()
           local cur_lnum = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_current_line]], {})
+          
+          local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
           local name = vim.api.nvim_buf_get_name(0)
           local extext = vim.fn.fnamemodify(name, ":e:e")
           local tangle = string.match(extext, ".*%.tl")
@@ -453,10 +476,12 @@ function M.debug(filename, ft)
             local bufname = vim.api.nvim_buf_get_name(0)
             local prefix, l = unpack(tangled[cur_lnum])
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
+            vim.api.nvim_command("normal " .. l.lnum .. "ggzz")
             
           else
             local bufname = vim.api.nvim_buf_get_name(0)
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
+            vim.api.nvim_command("normal " .. cur_lnum .. "ggzz")
             
           end
           print("Debugger breaked on line " .. cur_lnum .. "!")
@@ -484,6 +509,8 @@ function M.step()
     if dash_breaked then
       vim.schedule(function()
         local cur_lnum = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_current_line]], {})
+        
+        local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
         local name = vim.api.nvim_buf_get_name(0)
         local extext = vim.fn.fnamemodify(name, ":e:e")
         local tangle = string.match(extext, ".*%.tl")
@@ -502,10 +529,12 @@ function M.step()
           local bufname = vim.api.nvim_buf_get_name(0)
           local prefix, l = unpack(tangled[cur_lnum])
           signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
+          vim.api.nvim_command("normal " .. l.lnum .. "ggzz")
           
         else
           local bufname = vim.api.nvim_buf_get_name(0)
           signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
+          vim.api.nvim_command("normal " .. cur_lnum .. "ggzz")
           
         end
         print("Debugger breaked on line " .. cur_lnum .. "!")
