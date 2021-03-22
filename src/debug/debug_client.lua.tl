@@ -41,8 +41,11 @@ vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[debug.sethook(dash_every_line, 
 @wait_for_continue+=
 while not dash_continue do
   if dash_inspect_name then
-    @check_if_inspect_is_local_variable
-    @check_if_inspect_is_global_variable
+    dash_debug_vars = {}
+    @fill_vars_with_local_variables
+    @set_globals_as_metatable
+    @transform_inspect_name_expression
+    @execute_inspect_name_expression
     dash_inspect_result_done = true
     dash_inspect_name = nil
   end

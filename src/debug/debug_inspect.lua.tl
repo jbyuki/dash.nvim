@@ -1,32 +1,34 @@
 ##../dash
-@check_if_inspect_is_local_variable+=
+@fill_vars_with_local_variables+=
 local stack = 2
-while dash_inspect_name do
-  local li = 1
-  while true do
-    local ln, lv = debug.getlocal(stack, li)
-    li = li + 1
-    if not ln then
-      break
-    end
+local li = 1
+while true do
+  local ln, lv = debug.getlocal(stack, li)
+  li = li + 1
+  if not ln then break end
 
-    if ln == dash_inspect_name then
-      dash_inspect_result = lv
-      dash_inspect_name = nil
-      break
-    end
-  end
-
-  if li == 1 then
-    break
-  end
-  stack = stack + 1
-  break
+  dash_debug_vars[ln] = lv
 end
 
-@check_if_inspect_is_global_variable+=
-if _G[dash_inspect_name] then
-  dash_inspect_result = _G[dash_inspect_name]
+@set_globals_as_metatable+=
+setmetatable(dash_debug_vars, {
+  __index = _G
+})
+
+@transform_inspect_name_expression+=
+local start = string.find(dash_inspect_name, "[.%[]")
+if start then
+  local rest = string.sub(dash_inspect_name, start)
+  local start = string.sub(dash_inspect_name, 1, start-1)
+  dash_inspect_name = "return dash_debug_vars['" .. start .. "']" .. rest
+else
+  dash_inspect_name = "return dash_debug_vars['" .. dash_inspect_name .. "']"
+end
+
+@execute_inspect_name_expression+=
+local f = loadstring(dash_inspect_name)
+if f then
+  dash_inspect_result = f()
 end
 
 @implement+=
@@ -66,3 +68,19 @@ local dash_inspect_result = vim.fn.rpcrequest(neovim_conn, 'nvim_exec_lua', [[re
 
 @get_variable_name_to_inspect_under_cursor+=
 local name = vim.fn.expand("<cword>")
+
+@implement+=
+function M.vinspect()
+  @get_name_in_visual_selection
+  @send_inspect_name_to_neovim_debug
+  @wait_for_inspect_result
+end
+
+@get_name_in_visual_selection+=
+local _, srow, scol, _ = unpack(vim.fn.getpos("'<"))
+local _, erow, ecol, _ = unpack(vim.fn.getpos("'>"))
+
+assert(srow == erow, "only single row selection are supported!")
+
+local line = vim.api.nvim_buf_get_lines(0, srow-1, srow, true)[1]
+local name = string.sub(line, scol, ecol)
