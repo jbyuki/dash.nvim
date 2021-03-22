@@ -11,7 +11,6 @@ for lnum, line in ipairs(tangled) do
 end
 
 @send_all_breakpoints_to_neovim_debug_tangled+=
-print(vim.inspect(mapping))
 for _, sign in ipairs(signs[1].signs) do
   local lnums = mapping[sign.lnum]
   for _, lnum in ipairs(lnums) do
@@ -23,3 +22,9 @@ end
 local bufname = vim.api.nvim_buf_get_name(0)
 local prefix, l = unpack(tangled[cur_lnum])
 signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
+
+@send_breakpoint_to_debug_neovim_tangled+=
+local lnums = mapping[lnum]
+for _, lnum in ipairs(lnums) do
+  @send_breakpoint_to_debug_neovim
+end

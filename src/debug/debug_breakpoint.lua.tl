@@ -5,7 +5,13 @@ function M.toggle_breakpoint()
   @get_breakpoint_at_current_line
   @toggle_breakpoint_sign_at_current_line
   if debug_running then
-    @send_breakpoint_to_debug_neovim
+    @check_if_tangle_file
+    if tangle then
+      @get_tangle_line_mapping_for_current_file
+      @send_breakpoint_to_debug_neovim_tangled
+    else
+      @send_breakpoint_to_debug_neovim
+    end
   end
 end
 

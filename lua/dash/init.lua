@@ -111,8 +111,30 @@ function M.toggle_breakpoint()
   end
   
   if debug_running then
-    vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "if dash_breakpoint[" .. lnum .. "] then dash_breakpoint[" .. lnum .. "] = nil else dash_breakpoint[" .. lnum .. "] = true end" , {})
+    local name = vim.api.nvim_buf_get_name(0)
+    local extext = vim.fn.fnamemodify(name, ":e:e")
+    local tangle = string.match(extext, ".*%.tl")
     
+    if tangle then
+      local tangled = require"ntangle".get_location_list()
+      local mapping = {}
+      for lnum, line in ipairs(tangled) do
+        local prefix, l = unpack(line)
+        if l.lnum then
+          mapping[l.lnum] = mapping[l.lnum] or {}
+          table.insert(mapping[l.lnum], lnum)
+        end
+      end
+      
+      local lnums = mapping[lnum]
+      for _, lnum in ipairs(lnums) do
+        vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "if dash_breakpoint[" .. lnum .. "] then dash_breakpoint[" .. lnum .. "] = nil else dash_breakpoint[" .. lnum .. "] = true end" , {})
+        
+      end
+    else
+      vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "if dash_breakpoint[" .. lnum .. "] then dash_breakpoint[" .. lnum .. "] = nil else dash_breakpoint[" .. lnum .. "] = true end" , {})
+      
+    end
   end
 end
 
@@ -158,6 +180,7 @@ function M.continue()
             local bufname = vim.api.nvim_buf_get_name(0)
             local prefix, l = unpack(tangled[cur_lnum])
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
+            
           else
             local bufname = vim.api.nvim_buf_get_name(0)
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
@@ -381,7 +404,6 @@ function M.debug(filename, ft)
         end
       end
       
-      print(vim.inspect(mapping))
       for _, sign in ipairs(signs[1].signs) do
         local lnums = mapping[sign.lnum]
         for _, lnum in ipairs(lnums) do
@@ -424,6 +446,7 @@ function M.debug(filename, ft)
             local bufname = vim.api.nvim_buf_get_name(0)
             local prefix, l = unpack(tangled[cur_lnum])
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
+            
           else
             local bufname = vim.api.nvim_buf_get_name(0)
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
@@ -472,6 +495,7 @@ function M.step()
           local bufname = vim.api.nvim_buf_get_name(0)
           local prefix, l = unpack(tangled[cur_lnum])
           signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
+          
         else
           local bufname = vim.api.nvim_buf_get_name(0)
           signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
