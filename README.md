@@ -62,6 +62,7 @@ Start the debugger with `:DashDebug`.
 * Step: `require"dash".step()`
 * Continue: `require"dash".continue()`
 * Inspect variable: `require"dash".inspect()`
+* Inspect variable (visual): `require"dash".vinspect()`
 
 Installation
 ------------
