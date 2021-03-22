@@ -25,10 +25,17 @@ vim.fn.rpcnotify(neovim_conn, "nvim_exec", "luafile " .. filename, false)
 
 @define_debug_hooks+=
 dash_current_line = nil
+previous_lnum = nil
 
 function dash_every_line(event, lnum)
+  if lnum == 0 or lnum == previous_lnum then
+    return
+  end
+
   dash_current_line = lnum
-  if lnum ~= 0 and (dash_breakpoint[lnum] or dash_step) then
+  previous_lnum = lnum
+
+  if dash_breakpoint[lnum] or dash_step then
     dash_continue = false
     @send_to_host_that_breaked
     @wait_for_continue
