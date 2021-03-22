@@ -28,7 +28,7 @@ dash_current_line = nil
 
 function dash_every_line(event, lnum)
   dash_current_line = lnum
-  if dash_breakpoint[lnum] or dash_step then
+  if lnum ~= 0 and (dash_breakpoint[lnum] or dash_step) then
     dash_continue = false
     @send_to_host_that_breaked
     @wait_for_continue
