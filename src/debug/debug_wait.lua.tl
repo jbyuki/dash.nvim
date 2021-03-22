@@ -5,7 +5,13 @@ timer:start(0, 200, function()
   if dash_breaked then
     vim.schedule(function()
       @retrieve_current_line_in_debugger
-      @put_sign_for_pc
+      @check_if_tangle_file
+      if tangle then
+        @get_tangle_line_mapping_for_current_file
+        @put_sign_for_pc_tangled
+      else
+        @put_sign_for_pc
+      end
       print("Debugger breaked on line " .. cur_lnum .. "!")
     end)
     dash_breaked = false

@@ -28,7 +28,14 @@ vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_breakpoint = {}" , {})
 @send_all_breakpoints+=
 @get_all_breakpoint_in_current_buffer
 @clear_breapoints_in_debug_neovim
-@send_all_breakpoints_to_neovim_debug
+
+@check_if_tangle_file
+if tangle then
+  @get_tangle_line_mapping_for_current_file
+  @send_all_breakpoints_to_neovim_debug_tangled
+else
+  @send_all_breakpoints_to_neovim_debug
+end
 
 @define_signs+=
 vim.fn.sign_define("dashBreakpointDef", { text = "B", texthl = "debugBreakpoint" })
