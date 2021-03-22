@@ -170,56 +170,54 @@ function M.clear_breakpoints()
 end
 
 function M.continue()
-  if debug_running then
-    vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[dash_continue = true]], {})
-    vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[dash_step = nil]], {})
-    
-    if signPC then
-      local bufname = vim.api.nvim_buf_get_name(0)
-      vim.fn.sign_unplace("dashPC", { buffer = bufname })
-      signPC = nil
-    end
-    local timer = vim.loop.new_timer()
-    timer:start(0, 200, function()
-      if dash_breaked then
-        vim.schedule(function()
-          local cur_lnum = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_current_line]], {})
-          
-          local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
-          local name = vim.api.nvim_buf_get_name(0)
-          local extext = vim.fn.fnamemodify(name, ":e:e")
-          local tangle = string.match(extext, ".*%.tl")
-          
-          if tangle then
-            local tangled = require"ntangle".get_location_list()
-            local mapping = {}
-            for lnum, line in ipairs(tangled) do
-              local prefix, l = unpack(line)
-              if l.lnum then
-                mapping[l.lnum] = mapping[l.lnum] or {}
-                table.insert(mapping[l.lnum], lnum)
-              end
-            end
-            
-            local bufname = vim.api.nvim_buf_get_name(0)
-            local prefix, l = unpack(tangled[cur_lnum])
-            signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
-            vim.api.nvim_command("normal " .. l.lnum .. "ggzz")
-            
-          else
-            local bufname = vim.api.nvim_buf_get_name(0)
-            signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
-            vim.api.nvim_command("normal " .. cur_lnum .. "ggzz")
-            
-          end
-          print("Debugger breaked on line " .. cur_lnum .. "!")
-        end)
-        dash_breaked = false
-        timer:close()
-      end
-    end)
-    
+  vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[dash_continue = true]], {})
+  vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[dash_step = nil]], {})
+  
+  if signPC then
+    local bufname = vim.api.nvim_buf_get_name(0)
+    vim.fn.sign_unplace("dashPC", { buffer = bufname })
+    signPC = nil
   end
+  local timer = vim.loop.new_timer()
+  timer:start(0, 200, function()
+    if dash_breaked then
+      vim.schedule(function()
+        local cur_lnum = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_current_line]], {})
+        
+        local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
+        local name = vim.api.nvim_buf_get_name(0)
+        local extext = vim.fn.fnamemodify(name, ":e:e")
+        local tangle = string.match(extext, ".*%.tl")
+        
+        if tangle then
+          local tangled = require"ntangle".get_location_list()
+          local mapping = {}
+          for lnum, line in ipairs(tangled) do
+            local prefix, l = unpack(line)
+            if l.lnum then
+              mapping[l.lnum] = mapping[l.lnum] or {}
+              table.insert(mapping[l.lnum], lnum)
+            end
+          end
+          
+          local bufname = vim.api.nvim_buf_get_name(0)
+          local prefix, l = unpack(tangled[cur_lnum])
+          signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
+          vim.api.nvim_command("normal " .. l.lnum .. "ggzz")
+          
+        else
+          local bufname = vim.api.nvim_buf_get_name(0)
+          signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
+          vim.api.nvim_command("normal " .. cur_lnum .. "ggzz")
+          
+        end
+        print("Debugger breaked on line " .. cur_lnum .. "!")
+      end)
+      dash_breaked = false
+      timer:close()
+    end
+  end)
+  
 end
 
 function M.inspect()
