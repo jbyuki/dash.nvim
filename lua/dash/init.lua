@@ -1,4 +1,4 @@
--- Generated from debug_breakpoint.lua.tl, debug_client.lua.tl, debug_continue.lua.tl, debug_inspect.lua.tl, debug_loopback.lua.tl, debug_ntangle.lua.tl, debug_nvim.lua.tl, debug_pc.lua.tl, debug_server.lua.tl, debug_step.lua.tl, debug_ui_value.lua.tl, debug_wait.lua.tl, execute_buf.lua.tl, grey.lua.tl, init.lua.tl, lua-quickfix.lua.tl, lua-test.lua.tl, python-test.lua.tl, python.lua.tl, resize.lua.tl, test_suite.lua.tl, title.lua.tl, vimscript-quickfix.lua.tl, vimscript-test.lua.tl, vimscript.lua.tl using ntangle.nvim
+-- Generated from debug_breakpoint.lua.tl, debug_client.lua.tl, debug_continue.lua.tl, debug_inspect.lua.tl, debug_loopback.lua.tl, debug_ntangle.lua.tl, debug_nvim.lua.tl, debug_pc.lua.tl, debug_server.lua.tl, debug_step.lua.tl, debug_ui_value.lua.tl, debug_wait.lua.tl, execute_buf.lua.tl, grey.lua.tl, init.lua.tl, lua-quickfix.lua.tl, lua-test.lua.tl, lua_visual.lua.tl, python-test.lua.tl, python.lua.tl, resize.lua.tl, test_suite.lua.tl, title.lua.tl, vimscript-quickfix.lua.tl, vimscript-test.lua.tl, vimscript.lua.tl using ntangle.nvim
 local client_code_fn
 local client_code = [[ 
 dash_current_line = nil
@@ -91,6 +91,11 @@ local MAX_LINES = 10000
 local previous
 
 local hl_ns
+
+local neovim_visual
+local neovim_visual_conn
+
+local neovim_visual_timer
 
 local tests = {}
 
@@ -610,6 +615,7 @@ function M.execute(filename, ft, open_split, done)
     if previous then
       vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
     end
+    
   else
     execute_buf = vim.api.nvim_create_buf(false, true)
     
@@ -866,6 +872,16 @@ function M.execute(filename, ft, open_split, done)
 end
 
 function M.execute_buf()
+  if neovim_visual then
+    neovim_visual:kill()
+    neovim_visual = nil
+    if neovim_visual_timer then
+      neovim_visual_timer:close()
+    end
+    
+    return
+  end
+
   local name = vim.api.nvim_buf_get_name(0)
   local extext = vim.fn.fnamemodify(name, ":e:e")
   local tangle = string.match(extext, ".*%.tl")
@@ -881,6 +897,165 @@ function M.execute_buf()
   ft = vim.api.nvim_buf_get_option(0, "ft")
   
   M.execute(filename, ft, true)
+end
+
+function M.execute_visual()
+  ft = vim.api.nvim_buf_get_option(0, "ft")
+  
+  local _, start, _, _ = unpack(vim.fn.getpos("'<"))
+  local _, finish, _, _ = unpack(vim.fn.getpos("'>"))
+  local lines = vim.api.nvim_buf_get_lines(0, start-1, finish, true)
+  
+
+  local open_split = true
+  local buf
+  if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+    local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
+    local split
+    local win_size
+    local percent = 0.2
+    if width > 2*height then
+      split = "vsp"
+      win_size = math.floor(width*percent)
+    else
+      split = "sp"
+      win_size = math.floor(height*percent)
+    end
+    
+    vim.api.nvim_command("bo " .. win_size .. split)
+    execute_win = vim.api.nvim_get_current_win()
+    vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
+    vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
+    
+  end
+  
+  if open_split then
+    vim.api.nvim_set_current_win(execute_win)
+    vim.api.nvim_command("enew")
+    vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile nospell")
+    vim.api.nvim_command("setlocal nonumber")
+    vim.api.nvim_command("setlocal norelativenumber")
+    execute_buf = vim.api.nvim_win_get_buf(0)
+    
+    local bufname
+    while true do
+      bufname = "Out #" .. out_counter
+      local oldbufnr = vim.fn.bufnr(bufname)
+      if oldbufnr == -1 then
+        break
+      end
+      out_counter = out_counter + 1
+    end
+    vim.api.nvim_buf_set_name(execute_buf, bufname)
+    out_counter = out_counter + 1
+    vim.api.nvim_command("wincmd p")
+    
+    if previous then
+      vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
+    end
+    
+  else
+    execute_buf = vim.api.nvim_create_buf(false, true)
+    
+  end
+  buf = execute_buf
+  
+
+
+  if ft  == "lua" then
+    if not neovim_visual then
+      local err, pipe_address
+      if vim.fn.has('win32') then
+        pipe_address = [[\\.\pipe\nvim-pipe-23578]]
+      else
+        -- NEEDS TESTING
+        pipe_address = vim.fn.tempname()
+      end
+      
+      neovim_visual, err = vim.loop.spawn("nvim",
+      	{
+      		args = {"--headless", "-u", "NONE", "--listen", pipe_address},
+      		cwd = ".",
+      	}, 
+        function(code, signal)
+      end)
+      
+      neovim_visual_conn = M.try_connect(pipe_address)
+      
+      vim.fn.rpcnotify(neovim_visual_conn, "nvim_exec_lua", [[dash_output = {}]], {})
+      vim.fn.rpcnotify(neovim_visual_conn, "nvim_exec_lua", [[function print(str) table.insert(dash_output, tostring(str)) end]], {})
+      if neovim_visual_conn then
+        neovim_visual_timer = vim.loop.new_timer()
+        neovim_visual_timer:start(0, 200, function()
+          vim.schedule(function()
+            local succ, output = pcall(vim.fn.rpcrequest, neovim_visual_conn, "nvim_exec_lua", [[return dash_output]], {})
+            if not succ then
+              neovim_visual_timer:close()
+              neovim_visual_timer = nil
+              return
+            end
+      
+            if output then
+              succ, err = pcall(vim.api.nvim_buf_set_lines, execute_buf, 0, -1, true, output)
+              if not succ then
+                neovim_visual_timer:close()
+                neovim_visual_timer = nil
+                return
+              end
+            end
+          end)
+        end)
+      end
+      
+    end
+
+    if not neovim_visual_timer then
+      if neovim_visual_conn then
+        neovim_visual_timer = vim.loop.new_timer()
+        neovim_visual_timer:start(0, 200, function()
+          vim.schedule(function()
+            local succ, output = pcall(vim.fn.rpcrequest, neovim_visual_conn, "nvim_exec_lua", [[return dash_output]], {})
+            if not succ then
+              neovim_visual_timer:close()
+              neovim_visual_timer = nil
+              return
+            end
+      
+            if output then
+              succ, err = pcall(vim.api.nvim_buf_set_lines, execute_buf, 0, -1, true, output)
+              if not succ then
+                neovim_visual_timer:close()
+                neovim_visual_timer = nil
+                return
+              end
+            end
+          end)
+        end)
+      end
+      
+    end
+
+    local fname = vim.fn.tempname()
+    local f = io.open(fname, "w")
+    for _, line in ipairs(lines) do
+      f:write(line .. "\n")
+    end
+    f:close()
+    
+    vim.fn.rpcnotify(neovim_visual_conn, "nvim_exec", [[luafile ]] .. fname, false)
+    
+  end
+end
+
+function M.try_connect(add)
+  for i=1,10 do
+    local ok, conn
+    ok, conn = pcall(vim.fn.sockconnect, "pipe", add, {rpc=true})
+    if ok then
+      return conn
+    end
+    vim.wait(200)
+  end
 end
 
 function M.test()

@@ -189,6 +189,8 @@ end
 
 @implement+=
 function M.execute_buf()
+  @stop_any_visual_selection_instances
+
   @check_if_tangle_file
   local filename, ft
   if tangle then
@@ -304,4 +306,43 @@ end
 @set_previous_content_in_the_meantime+=
 if previous then
   vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
+end
+
+@script_variables+=
+local neovim_visual
+local neovim_visual_conn
+
+@implement+=
+function M.execute_visual()
+  @get_current_buffer_filetype
+  @get_visual_selection
+
+  local open_split = true
+  local buf
+  @create_split_if_none
+
+
+  if ft  == "lua" then
+    if not neovim_visual then
+      @spawn_instance_for_neovim_visual
+      @connect_to_neovim_visual
+      @send_custom_print_for_neovim_lua
+      @start_waiting_loop
+    end
+
+    if not neovim_visual_timer then
+      @start_waiting_loop
+    end
+
+    @write_to_temporary_file
+    @send_visual_selection_to_neovim
+  end
+end
+
+@stop_any_visual_selection_instances+=
+if neovim_visual then
+  neovim_visual:kill()
+  neovim_visual = nil
+  @stop_neovim_visual_timer
+  return
 end
