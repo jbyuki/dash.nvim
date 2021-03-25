@@ -571,6 +571,14 @@ end
 
 function M.execute(filename, ft, open_split, done)
   local buf
+  if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+    local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+    local cur_tab = vim.api.nvim_get_current_tabpage()
+    if win_tab ~= cur_tab then
+      vim.api.nvim_win_close(execute_win, true)
+      execute_win = nil
+    end
+  end
   if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
     local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
     local split
@@ -881,6 +889,7 @@ function M.execute_buf()
     
     return
   end
+  
 
   local name = vim.api.nvim_buf_get_name(0)
   local extext = vim.fn.fnamemodify(name, ":e:e")
@@ -909,6 +918,14 @@ function M.execute_visual()
 
   local open_split = true
   local buf
+  if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+    local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+    local cur_tab = vim.api.nvim_get_current_tabpage()
+    if win_tab ~= cur_tab then
+      vim.api.nvim_win_close(execute_win, true)
+      execute_win = nil
+    end
+  end
   if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
     local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
     local split

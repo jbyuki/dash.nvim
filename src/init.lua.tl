@@ -14,6 +14,7 @@ local a
 @implement+=
 function M.execute(filename, ft, open_split, done)
   local buf
+  @close_split_if_different_tabpage
   @create_split_if_none
   @save_split_size
   @close_quickfix_if_open
@@ -319,6 +320,7 @@ function M.execute_visual()
 
   local open_split = true
   local buf
+  @close_split_if_different_tabpage
   @create_split_if_none
 
 
@@ -345,4 +347,14 @@ if neovim_visual then
   neovim_visual = nil
   @stop_neovim_visual_timer
   return
+end
+
+@close_split_if_different_tabpage+=
+if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+  local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+  local cur_tab = vim.api.nvim_get_current_tabpage()
+  if win_tab ~= cur_tab then
+    vim.api.nvim_win_close(execute_win, true)
+    execute_win = nil
+  end
 end
