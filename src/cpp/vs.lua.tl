@@ -61,13 +61,15 @@ handle, err = vim.loop.spawn("MSBuild.exe",
     args = { build_path },
 		cwd = ".",
 	}, function(code, signal)
-    if code == 0 then
-      vim.schedule(function() 
+    vim.schedule(function()
+      if code == 0 then
         execute_program()
-      end)
-    else
-      finish(code, signal)
-    end
+      else
+        @parse_errors_cpp
+        @put_errors_in_quickfix_cpp
+        finish(code, signal)
+      end
+    end)
 end)
 
 @execute_cpp_program_on_success+=
