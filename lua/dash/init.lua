@@ -824,7 +824,6 @@ function M.execute(filename, ft, open_split, done)
       function execute_program()
         local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/bin/Debug"
         local exe_file = vim.fn.glob(bin_path .. "/*.exe")
-        print("exe " .. exe_file)
       
       
         output_lines = {}
