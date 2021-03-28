@@ -44,6 +44,13 @@ function M.execute(filename, ft, open_split, done)
     @spawn_python_instance
   elseif ft == "vim" then
     @spawn_neovim_process_for_vimscript
+  elseif ft == "cpp" then
+    @try_find_vs_solution
+    if vs then
+      local execute_program
+      @spawn_vs_compilation
+      @execute_cpp_program_on_success
+    end
   end
   @if_spawn_error_print
   @register_pipe_callback_neovim
