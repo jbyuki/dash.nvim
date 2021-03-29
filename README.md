@@ -11,16 +11,20 @@ Supported
 * :seedling: : Supports but still unstable.
 * :deciduous_tree: : Stable.
 
-| Language | Execute | Quickfix | Debugger |
-|----------|:-------:|:--------:|:--------:|
-| _Lua_ | :seedling: | :seedling: | :seedling: |
-| _Python_ | :seedling: | | |
-| _Vimscript_ | :seedling: | :seedling: | |
-| _C++ / Visual Studio_ | :seedling: | :seedling: | |
+| Language | Execute | Visual | Quickfix | Debugger |
+|----------|:-------:|:--------:|:--------:|:--------:|
+| _Lua_ | :seedling: | :seedling: | :seedling: | :seedling: |
+| _Python_ | :seedling: || | |
+| _Vimscript_ | :seedling: || :seedling: | |
+| _C++ / Visual Studio_ | :seedling: || :seedling: | |
+| Matlab | || | |
 
 Can be used in conjunction with [ntangle.nvim](https://github.com/jbyuki/ntangle.nvim).
 
+**Visual**: Execution of a visual selection
+
 **Remark**: I'm still debating if the lua debugger belongs here. But for convenience, I won't do a separate plugin for now.
+
 
 Features
 --------
