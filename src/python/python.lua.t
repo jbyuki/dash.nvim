@@ -6,3 +6,7 @@ handle, err = vim.loop.spawn("python",
 		args = {filename},
 		cwd = ".",
 	}, finish)
+
+@execute_visual_python+=
+@write_to_temporary_file
+M.execute(fname, ft, true)

@@ -1,4 +1,4 @@
--- Generated from debug_breakpoint.lua.tl, debug_client.lua.tl, debug_continue.lua.tl, debug_inspect.lua.tl, debug_loopback.lua.tl, debug_ntangle.lua.tl, debug_nvim.lua.tl, debug_pc.lua.tl, debug_server.lua.tl, debug_step.lua.tl, debug_ui_value.lua.tl, debug_wait.lua.tl, execute_buf.lua.tl, grey.lua.tl, init.lua.tl, lua-quickfix.lua.tl, lua-test.lua.tl, lua_visual.lua.tl, python-test.lua.tl, python.lua.tl, resize.lua.tl, test_suite.lua.tl, title.lua.tl, vimscript-quickfix.lua.tl, vimscript-test.lua.tl, vimscript.lua.tl, vs.lua.tl, vs_quickfix.lua.tl using ntangle.nvim
+-- Generated using ntangle.nvim
 local client_code_fn
 local client_code = [[ 
 dash_current_line = nil
@@ -86,7 +86,7 @@ local output_lines = {}
 
 local execute_win, execute_buf
 
-local MAX_LINES = 10000
+local MAX_LINES = 500
 
 local previous
 
@@ -97,9 +97,9 @@ local neovim_visual_conn
 
 local neovim_visual_timer
 
+local out_counter = 1
 local tests = {}
 
-local out_counter = 1
 tests["lua"] = {
   str = [[
 print("hello")
@@ -123,6 +123,50 @@ vim.fn.sign_define("dashBreakpointDef", { text = "B", texthl = "debugBreakpoint"
 vim.fn.sign_define("dashPCDef", { text = "PC", texthl = "debugPC", linehl = "debugPC" })
 
 local M = {}
+function M.find_sln()
+  local path = vim.fn.expand("%:p")
+  local sln_path
+  while true do
+    local parent = vim.fn.fnamemodify(path, ":h")
+    local dirs = {}
+    for file in vim.gsplit(vim.fn.glob(parent .. "/*"), "\n") do
+      if vim.fn.isdirectory(file) == 1 then
+        table.insert(dirs, file)
+      end
+    end
+    
+    local build_path
+    for _, dir in ipairs(dirs) do
+      if vim.fn.fnamemodify(dir, ":t") == "build" then
+        build_path = dir
+        break
+      end
+    end
+    
+    if build_path then
+      for file in vim.gsplit(vim.fn.glob(build_path .. "/*"), "\n") do
+        if vim.fn.isdirectory(file) == 0 then
+          if vim.fn.fnamemodify(file, ":e") == "sln" then
+            sln_path = file
+            break
+          end
+        end
+      end
+    end
+    
+
+    if sln_path then
+      break
+    end
+
+    if parent == path then
+      break
+    end
+    path = parent 
+  end
+  return sln_path
+end
+
 function M.toggle_breakpoint()
   local lnum, _  = unpack(vim.api.nvim_win_get_cursor(0))
   
@@ -140,7 +184,7 @@ function M.toggle_breakpoint()
   if debug_running then
     local name = vim.api.nvim_buf_get_name(0)
     local extext = vim.fn.fnamemodify(name, ":e:e")
-    local tangle = string.match(extext, ".*%.tl")
+    local tangle = string.match(extext, ".*%.t")
     
     if tangle then
       local tangled = require"ntangle".get_location_list()
@@ -192,7 +236,7 @@ function M.continue()
         local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
         local name = vim.api.nvim_buf_get_name(0)
         local extext = vim.fn.fnamemodify(name, ":e:e")
-        local tangle = string.match(extext, ".*%.tl")
+        local tangle = string.match(extext, ".*%.t")
         
         if tangle then
           local tangled = require"ntangle".get_location_list()
@@ -326,7 +370,7 @@ end
 function M.debug_buf()
   local name = vim.api.nvim_buf_get_name(0)
   local extext = vim.fn.fnamemodify(name, ":e:e")
-  local tangle = string.match(extext, ".*%.tl")
+  local tangle = string.match(extext, ".*%.t")
   
   local filename, ft
   if tangle then
@@ -421,7 +465,7 @@ function M.debug(filename, ft)
     
     local name = vim.api.nvim_buf_get_name(0)
     local extext = vim.fn.fnamemodify(name, ":e:e")
-    local tangle = string.match(extext, ".*%.tl")
+    local tangle = string.match(extext, ".*%.t")
     
     if tangle then
       local tangled = require"ntangle".get_location_list()
@@ -463,7 +507,7 @@ function M.debug(filename, ft)
           local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
           local name = vim.api.nvim_buf_get_name(0)
           local extext = vim.fn.fnamemodify(name, ":e:e")
-          local tangle = string.match(extext, ".*%.tl")
+          local tangle = string.match(extext, ".*%.t")
           
           if tangle then
             local tangled = require"ntangle".get_location_list()
@@ -516,7 +560,7 @@ function M.step()
         local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
         local name = vim.api.nvim_buf_get_name(0)
         local extext = vim.fn.fnamemodify(name, ":e:e")
-        local tangle = string.match(extext, ".*%.tl")
+        local tangle = string.match(extext, ".*%.t")
         
         if tangle then
           local tangled = require"ntangle".get_location_list()
@@ -550,23 +594,6 @@ function M.step()
 end
 function M._close_preview_autocmd(events, winnr)
   vim.api.nvim_command("autocmd "..table.concat(events, ',').." <buffer> ++once lua pcall(vim.api.nvim_win_close, "..winnr..", true)")
-end
-
-function M.execute_lines(lines, ft, show_pane, done)
-  local fname = vim.fn.tempname()
-  local f = io.open(fname, "w")
-  for _, line in ipairs(lines) do
-    f:write(line .. "\n")
-  end
-  f:close()
-  
-  local augmented = function()
-    os.remove(fname)
-    if done then
-      done()
-    end
-  end
-  M.execute(fname, ft, show_pane, augmented)
 end
 
 function M.execute(filename, ft, open_split, done)
@@ -735,7 +762,7 @@ function M.execute(filename, ft, open_split, done)
     handle, err = vim.loop.spawn("nvim",
     	{
     		stdio = {stdin, stdout, stderr},
-    		args = {"--headless", "-u", "NONE", "-c", "luafile " .. filename, "-c", "exit"},
+    		args = {"--headless", "-c", "luafile " .. filename, "-c", "exit"},
     		cwd = ".",
     	}, finish)
     
@@ -746,6 +773,7 @@ function M.execute(filename, ft, open_split, done)
     		args = {filename},
     		cwd = ".",
     	}, finish)
+    
   elseif ft == "vim" then
     handle, err = vim.loop.spawn("nvim",
     	{
@@ -1101,7 +1129,7 @@ function M.execute_buf()
 
   local name = vim.api.nvim_buf_get_name(0)
   local extext = vim.fn.fnamemodify(name, ":e:e")
-  local tangle = string.match(extext, ".*%.tl")
+  local tangle = string.match(extext, ".*%.t")
   
   local filename, ft
   if tangle then
@@ -1124,70 +1152,69 @@ function M.execute_visual()
   local lines = vim.api.nvim_buf_get_lines(0, start-1, finish, true)
   
 
-  local open_split = true
-  local buf
-  if execute_win and vim.api.nvim_win_is_valid(execute_win) then
-    local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
-    local cur_tab = vim.api.nvim_get_current_tabpage()
-    if win_tab ~= cur_tab then
-      vim.api.nvim_win_close(execute_win, true)
-      execute_win = nil
-    end
-  end
-  if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
-    local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
-    local split
-    local win_size
-    local percent = 0.2
-    if width > 2*height then
-      split = "vsp"
-      win_size = math.floor(width*percent)
-    else
-      split = "sp"
-      win_size = math.floor(height*percent)
-    end
-    
-    vim.api.nvim_command("bo " .. win_size .. split)
-    execute_win = vim.api.nvim_get_current_win()
-    vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
-    vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
-    
-  end
-  
-  if open_split then
-    vim.api.nvim_set_current_win(execute_win)
-    vim.api.nvim_command("enew")
-    vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile nospell")
-    vim.api.nvim_command("setlocal nonumber")
-    vim.api.nvim_command("setlocal norelativenumber")
-    execute_buf = vim.api.nvim_win_get_buf(0)
-    
-    local bufname
-    while true do
-      bufname = "Out #" .. out_counter
-      local oldbufnr = vim.fn.bufnr(bufname)
-      if oldbufnr == -1 then
-        break
-      end
-      out_counter = out_counter + 1
-    end
-    vim.api.nvim_buf_set_name(execute_buf, bufname)
-    out_counter = out_counter + 1
-    vim.api.nvim_command("wincmd p")
-    
-    if previous then
-      vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
-    end
-    
-  else
-    execute_buf = vim.api.nvim_create_buf(false, true)
-    
-  end
-  buf = execute_buf
-  
-
-
   if ft  == "lua" then
+    local open_split = true
+    local buf
+    if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+      local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+      local cur_tab = vim.api.nvim_get_current_tabpage()
+      if win_tab ~= cur_tab then
+        vim.api.nvim_win_close(execute_win, true)
+        execute_win = nil
+      end
+    end
+    if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+      local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
+      local split
+      local win_size
+      local percent = 0.2
+      if width > 2*height then
+        split = "vsp"
+        win_size = math.floor(width*percent)
+      else
+        split = "sp"
+        win_size = math.floor(height*percent)
+      end
+      
+      vim.api.nvim_command("bo " .. win_size .. split)
+      execute_win = vim.api.nvim_get_current_win()
+      vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
+      vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
+      
+    end
+    
+    if open_split then
+      vim.api.nvim_set_current_win(execute_win)
+      vim.api.nvim_command("enew")
+      vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile nospell")
+      vim.api.nvim_command("setlocal nonumber")
+      vim.api.nvim_command("setlocal norelativenumber")
+      execute_buf = vim.api.nvim_win_get_buf(0)
+      
+      local bufname
+      while true do
+        bufname = "Out #" .. out_counter
+        local oldbufnr = vim.fn.bufnr(bufname)
+        if oldbufnr == -1 then
+          break
+        end
+        out_counter = out_counter + 1
+      end
+      vim.api.nvim_buf_set_name(execute_buf, bufname)
+      out_counter = out_counter + 1
+      vim.api.nvim_command("wincmd p")
+      
+      if previous then
+        vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
+      end
+      
+    else
+      execute_buf = vim.api.nvim_create_buf(false, true)
+      
+    end
+    buf = execute_buf
+    
+
     if not neovim_visual then
       local err, pipe_address
       if vim.fn.has('win32') then
@@ -1269,6 +1296,15 @@ function M.execute_visual()
     
     vim.fn.rpcnotify(neovim_visual_conn, "nvim_exec", [[luafile ]] .. fname, false)
     
+  elseif ft == "python" then
+    local fname = vim.fn.tempname()
+    local f = io.open(fname, "w")
+    for _, line in ipairs(lines) do
+      f:write(line .. "\n")
+    end
+    f:close()
+    
+    M.execute(fname, ft, true)
   end
 end
 
@@ -1281,6 +1317,23 @@ function M.try_connect(add)
     end
     vim.wait(200)
   end
+end
+
+function M.execute_lines(lines, ft, show_pane, done)
+  local fname = vim.fn.tempname()
+  local f = io.open(fname, "w")
+  for _, line in ipairs(lines) do
+    f:write(line .. "\n")
+  end
+  f:close()
+  
+  local augmented = function()
+    os.remove(fname)
+    if done then
+      done()
+    end
+  end
+  M.execute(fname, ft, show_pane, augmented)
 end
 
 function M.test()
@@ -1342,50 +1395,6 @@ function M.test()
     vim.api.nvim_buf_add_highlight(result_buf, ns_id, hl_group, i-1, padding, -1)
   end
   
-end
-
-function M.find_sln()
-  local path = vim.fn.expand("%:p")
-  local sln_path
-  while true do
-    local parent = vim.fn.fnamemodify(path, ":h")
-    local dirs = {}
-    for file in vim.gsplit(vim.fn.glob(parent .. "/*"), "\n") do
-      if vim.fn.isdirectory(file) == 1 then
-        table.insert(dirs, file)
-      end
-    end
-    
-    local build_path
-    for _, dir in ipairs(dirs) do
-      if vim.fn.fnamemodify(dir, ":t") == "build" then
-        build_path = dir
-        break
-      end
-    end
-    
-    if build_path then
-      for file in vim.gsplit(vim.fn.glob(build_path .. "/*"), "\n") do
-        if vim.fn.isdirectory(file) == 0 then
-          if vim.fn.fnamemodify(file, ":e") == "sln" then
-            sln_path = file
-            break
-          end
-        end
-      end
-    end
-    
-
-    if sln_path then
-      break
-    end
-
-    if parent == path then
-      break
-    end
-    path = parent 
-  end
-  return sln_path
 end
 
 

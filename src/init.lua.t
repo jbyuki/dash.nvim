@@ -72,7 +72,7 @@ local stderr = vim.loop.new_pipe(false)
 handle, err = vim.loop.spawn("nvim",
 	{
 		stdio = {stdin, stdout, stderr},
-		args = {"--headless", "-u", "NONE", "-c", "luafile " .. filename, "-c", "exit"},
+		args = {"--headless", "-c", "luafile " .. filename, "-c", "exit"},
 		cwd = ".",
 	}, finish)
 
@@ -157,7 +157,7 @@ execute_buf = vim.api.nvim_create_buf(false, true)
 vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
 @script_variables+=
-local MAX_LINES = 10000
+local MAX_LINES = 500
 
 @append_output_to_buf+=
 if #output_lines == 0 then
@@ -301,7 +301,7 @@ stderr:read_stop()
 @check_if_tangle_file+=
 local name = vim.api.nvim_buf_get_name(0)
 local extext = vim.fn.fnamemodify(name, ":e:e")
-local tangle = string.match(extext, ".*%.tl")
+local tangle = string.match(extext, ".*%.t")
 
 @get_root_ntangle+=
 filename = require"ntangle".getRootFilename()
@@ -325,13 +325,12 @@ function M.execute_visual()
   @get_current_buffer_filetype
   @get_visual_selection
 
-  local open_split = true
-  local buf
-  @close_split_if_different_tabpage
-  @create_split_if_none
-
-
   if ft  == "lua" then
+    local open_split = true
+    local buf
+    @close_split_if_different_tabpage
+    @create_split_if_none
+
     if not neovim_visual then
       @spawn_instance_for_neovim_visual
       @connect_to_neovim_visual
@@ -345,6 +344,8 @@ function M.execute_visual()
 
     @write_to_temporary_file
     @send_visual_selection_to_neovim
+  elseif ft == "python" then
+    @execute_visual_python
   end
 end
 
