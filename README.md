@@ -14,7 +14,7 @@ Supported
 | Language | Execute | Visual | Quickfix | Debugger |
 |----------|:-------:|:--------:|:--------:|:--------:|
 | _Lua_ | :seedling: | :seedling: | :seedling: | :seedling: |
-| _Python_ | :seedling: || | |
+| _Python_ | :seedling: | :seedling: | | |
 | _Vimscript_ | :seedling: || :seedling: | |
 | _C++ / Visual Studio_ | :seedling: || :seedling: | |
 | Matlab | || | |
