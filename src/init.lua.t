@@ -50,6 +50,13 @@ function M.execute(filename, ft, open_split, done)
       local execute_program
       @spawn_vs_compilation
       @execute_cpp_program_on_success
+    else
+      @try_find_build_bat
+      if buildbat then
+        local execute_program_bat
+        @execute_build_bat
+        @execute_exe_if_exists_build_bat
+      end
     end
   end
   @if_spawn_error_print
@@ -190,10 +197,6 @@ let g:loaded_dash= 1
 
 @register_vim_commands+=
 command! -nargs=0 -bar DashRun lua require"dash".execute_buf()
-
-@o+=
-local a
-end
 
 @implement+=
 function M.execute_buf()
