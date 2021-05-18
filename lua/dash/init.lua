@@ -1,4 +1,12 @@
 -- Generated using ntangle.nvim
+local state_buf, state_win
+local parent_width, parent_height
+local win_width, win_height
+
+local ns_hl = vim.api.nvim_create_namespace("")
+
+local ns_hl2 = vim.api.nvim_create_namespace("")
+
 local client_code_fn
 local client_code = [[ 
 dash_current_line = nil
@@ -1150,6 +1158,202 @@ function M.execute(filename, ft, open_split, done)
         end
       end
     end
+  elseif ft == "bf" then
+    vim.schedule(function()
+      if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+        vim.api.nvim_win_close(execute_win, true)
+        execute_win = nil
+      end
+      
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
+      
+      local program = {}
+      for i=1,#lines do 
+        local line = lines[i]
+        for j=1,string.len(line) do
+          local c = line:sub(j, j)
+          if c == "+" or c == "-" or c == "[" or c == "]" or c == "<" or c == ">" or c == "." or c == "," then
+            table.insert(program, {
+              ins = c,
+              row = i-1,
+              col = j-1,
+            })
+          end
+          
+        end
+      end
+      
+      local stack = {}
+      for i, c in ipairs(program) do
+        if c.ins == "[" then
+          table.insert(stack, i)
+        elseif c.ins == "]" then
+          assert(#stack > 0, "Mismatch ]")
+          local j = stack[#stack]
+          c.ref = j
+          program[j].ref = i
+          table.remove(stack)
+        end
+      end
+      
+      assert(#stack == 0, "Mismatch [")
+      
+      state_buf = vim.api.nvim_create_buf(false, true)
+      parent_width = vim.api.nvim_win_get_width(0)
+      parent_height = vim.api.nvim_win_get_height(0)
+      win_width = 2
+      win_height = 2
+      state_win = vim.api.nvim_open_win(state_buf, false, {
+        relative = "win",
+        row = parent_height - win_height - 1,
+        col = parent_width - win_width - 1,
+        width = win_width,
+        height = win_height,
+        style = "minimal",
+      })
+      
+      
+      vim.api.nvim_buf_set_keymap(0, "n", "q", [[<cmd>lua require"dash".stop_bf()<CR>]], { noremap = true })
+      print("Press 'q' to stop.")
+      
+      
+      local tape = {}
+      local ip = 1
+      local dp = 1
+      
+      local output = {}
+      
+      timer = vim.loop.new_timer()
+      timer:start(0, 50, function()
+        local c = program[ip]
+        
+        if not c then
+          timer:close()
+          timer = nil
+          vim.schedule(function()
+            vim.api.nvim_buf_clear_namespace(0, ns_hl, 0, -1)
+            
+            vim.api.nvim_set_current_win(state_win)
+            
+          end)
+          return
+        end
+        
+      
+        local sdp = dp
+        
+        if c.ins == "+" then
+          tape[dp] = (tape[dp] or 0)+1
+        elseif c.ins == "-" then
+          tape[dp] = (tape[dp] or 0)-1
+        elseif c.ins == "<" then
+          dp = dp - 1
+        elseif c.ins == ">" then
+          dp = dp + 1
+        elseif c.ins == "[" then
+          if not tape[dp] or tape[dp] == 0 then
+            ip = c.ref
+          end
+        elseif c.ins == "]" then
+          if tape[dp] and tape[dp] ~= 0 then
+            ip = c.ref
+          end
+        elseif c.ins == "." then
+          table.insert(output, string.char(tape[dp] or 0))
+        end
+        
+        if not tape[dp] then
+          tape[dp] = 0
+        end
+        
+        vim.schedule(function()
+          vim.api.nvim_buf_clear_namespace(0, ns_hl, 0, -1)
+          
+          vim.api.nvim_buf_set_extmark(0, ns_hl, c.row, c.col, {
+            hl_group = "IncSearch",
+            end_col = c.col+1,
+          })
+          
+          function a()
+          end
+          
+      
+          local lines = {}
+          
+          table.insert(lines, table.concat(tape, " ") or "")
+          
+          local start = 0
+          for i=1,sdp-1 do
+            start = start + string.len(tostring(tape[i])) + 1
+          end
+          
+          local outlines = vim.split(table.concat(output), "\r*\n")
+          for _, line in ipairs(outlines) do
+            table.insert(lines, line)
+          end
+          
+          vim.api.nvim_buf_set_lines(state_buf, 0, -1, true, lines)
+          
+          local max_width = 0
+          for _, line in ipairs(lines) do
+            max_width = math.max(string.len(line), max_width)
+          end
+          
+          if max_width > win_width then
+            win_width = max_width
+            vim.api.nvim_win_set_config(state_win, {
+              relative = "win",
+              row = parent_height - win_height - 1,
+              col = parent_width - win_width - 1,
+              width = win_width,
+              height = win_height,
+            })
+          end
+          
+          if #lines > win_height then
+            win_height = #lines
+            vim.api.nvim_win_set_config(state_win, {
+              relative = "win",
+              row = parent_height - win_height - 1,
+              col = parent_width - win_width - 1,
+              width = win_width,
+              height = win_height,
+            })
+          end
+          
+          vim.api.nvim_buf_clear_namespace(state_buf, ns_hl2, 0, -1)
+          local succ = pcall(vim.api.nvim_buf_set_extmark, state_buf, ns_hl2, 0, start, {
+            hl_group = "IncSearch",
+            end_col = start + string.len(tostring(tape[sdp]))
+          })
+          
+          if not succ then
+            timer:close()
+            return
+          end
+          
+          
+        end)
+        ip = ip+1
+        
+      end)
+      
+      function M.stop_bf()
+        vim.api.nvim_buf_clear_namespace(0, ns_hl, 0, -1)
+        
+        vim.api.nvim_buf_del_keymap(0, "n", "q")
+        
+        vim.api.nvim_set_current_win(state_win)
+        
+        if timer then
+          timer:close()
+          timer = nil
+        end
+        
+      end
+      
+    end)
+    return
   end
   assert(handle, err)
   

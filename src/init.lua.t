@@ -58,6 +58,12 @@ function M.execute(filename, ft, open_split, done)
         @execute_exe_if_exists_build_bat
       end
     end
+  elseif ft == "bf" then
+    vim.schedule(function()
+      @close_split
+      @execute_bf_program
+    end)
+    return
   end
   @if_spawn_error_print
   @register_pipe_callback_neovim
