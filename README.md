@@ -97,3 +97,8 @@ Help
 
 * If you encounter any problem, please don't hesitate to open an [Issue](https://github.com/jbyuki/dash.nvim/issues).
 * All contributions are welcome.
+
+Extra
+-----
+
+For the curious out there: Try to copy-paste a brainf\*ck program and execute it using `DashRun`. Set the filetype to bf using `set ft=bf`. Admire the computation done live in front of your eyes.
