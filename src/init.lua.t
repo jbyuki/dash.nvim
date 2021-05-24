@@ -8,11 +8,9 @@ local M = {}
 
 return M
 
-@o+=
-local a
-
 @implement+=
 function M.execute(filename, ft, open_split, done)
+  @close_previous_handle
   local buf
   @close_split_if_different_tabpage
   @create_split_if_none
@@ -69,6 +67,7 @@ function M.execute(filename, ft, open_split, done)
   @register_pipe_callback_neovim
   if handle then
     @clear_output_lines
+    @save_handle_globally
   end
 end
 
@@ -373,5 +372,19 @@ if execute_win and vim.api.nvim_win_is_valid(execute_win) then
   if win_tab ~= cur_tab then
     vim.api.nvim_win_close(execute_win, true)
     execute_win = nil
+  end
+end
+
+@script_variables+=
+local previous_handle
+
+@save_handle_globally+=
+previous_handle = handle
+
+@close_previous_handle+=
+if previous_handle then
+  if previous_handle:is_active() then
+    previous_handle:kill()
+    previous_handle = nil
   end
 end

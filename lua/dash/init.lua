@@ -103,6 +103,8 @@ local hl_ns
 local neovim_visual
 local neovim_visual_conn
 
+local previous_handle
+
 local neovim_visual_timer
 
 local out_counter = 1
@@ -605,6 +607,12 @@ function M._close_preview_autocmd(events, winnr)
 end
 
 function M.execute(filename, ft, open_split, done)
+  if previous_handle then
+    if previous_handle:is_active() then
+      previous_handle:kill()
+      previous_handle = nil
+    end
+  end
   local buf
   if execute_win and vim.api.nvim_win_is_valid(execute_win) then
     local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
@@ -614,6 +622,7 @@ function M.execute(filename, ft, open_split, done)
       execute_win = nil
     end
   end
+  
   if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
     local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
     local split
@@ -1477,6 +1486,8 @@ function M.execute(filename, ft, open_split, done)
   if handle then
     output_lines = {}
     
+    previous_handle = handle
+    
   end
 end
 
@@ -1528,6 +1539,7 @@ function M.execute_visual()
         execute_win = nil
       end
     end
+    
     if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
       local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
       local split
