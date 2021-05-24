@@ -613,6 +613,7 @@ function M.execute(filename, ft, open_split, done)
       previous_handle = nil
     end
   end
+  
   local buf
   if execute_win and vim.api.nvim_win_is_valid(execute_win) then
     local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
@@ -700,6 +701,9 @@ function M.execute(filename, ft, open_split, done)
 
   local finish = function(code, signal) 
 		vim.schedule(function()
+      if not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
       if #output_lines == 0 then
         vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
       end

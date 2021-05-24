@@ -24,6 +24,7 @@ function M.execute(filename, ft, open_split, done)
 
   local finish = function(code, signal) 
 		vim.schedule(function()
+      @check_if_buffer_is_valid
       @if_no_output_clear_grey_highlight
       @if_no_output_clear_console
       @compare_with_previous_output
@@ -387,4 +388,9 @@ if previous_handle then
     previous_handle:kill()
     previous_handle = nil
   end
+end
+
+@check_if_buffer_is_valid+=
+if not vim.api.nvim_buf_is_valid(buf) then
+  return
 end
