@@ -796,10 +796,10 @@ function M.execute(filename, ft, open_split, done)
     	}, finish)
 
   elseif ft == "fennel" then
-    handle, err = vim.loop.spawn("fennel",
+    handle, err = vim.loop.spawn("cmd",
     	{
     		stdio = {stdin, stdout, stderr},
-    		args = {filename},
+    		args = {"/c fennel " .. filename},
     		cwd = ".",
     	}, finish)
 

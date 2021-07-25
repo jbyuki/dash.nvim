@@ -1,9 +1,9 @@
 ##../dash
 @spawn_fennel_instance+=
-handle, err = vim.loop.spawn("fennel",
+handle, err = vim.loop.spawn("cmd",
 	{
 		stdio = {stdin, stdout, stderr},
-		args = {filename},
+		args = {"/c fennel " .. filename},
 		cwd = ".",
 	}, finish)
 
