@@ -41,9 +41,11 @@ function M.execute(filename, ft, open_split, done)
     @spawn_neovim_process
   elseif ft == "python" then
     @spawn_python_instance
+  elseif ft == "fennel" then
+    @spawn_fennel_instance
   elseif ft == "vim" then
     @spawn_neovim_process_for_vimscript
-  elseif ft == "cpp" then
+  elseif ft == "cpp" or ft == "c" then
     @try_find_vs_solution
     if vs then
       local execute_program
@@ -355,6 +357,8 @@ function M.execute_visual()
     @send_visual_selection_to_neovim
   elseif ft == "python" then
     @execute_visual_python
+  elseif ft == "fennel" then
+    @execute_visual_fennel
   end
 end
 
