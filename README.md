@@ -15,6 +15,7 @@ Supported
 |----------|:-------:|:--------:|:--------:|:--------:|
 | _Lua_ | :seedling: | :seedling: | :seedling: | :seedling: |
 | _Python_ | :seedling: | :seedling: | | |
+| _Fennel | :seedling: | :seedling: | | |
 | _Vimscript_ | :seedling: || :seedling: | |
 | _C++ / Visual Studio_ | :seedling: || :seedling: | |
 | Matlab | || | |
