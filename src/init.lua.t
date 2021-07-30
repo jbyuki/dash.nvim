@@ -43,6 +43,8 @@ function M.execute(filename, ft, open_split, done)
     @spawn_python_instance
   elseif ft == "fennel" then
     @spawn_fennel_instance
+  elseif ft == "javascript" then
+    @spawn_nodejs_instance
   elseif ft == "vim" then
     @spawn_neovim_process_for_vimscript
   elseif ft == "cpp" or ft == "c" then
@@ -359,6 +361,8 @@ function M.execute_visual()
     @execute_visual_python
   elseif ft == "fennel" then
     @execute_visual_fennel
+  elseif ft == "javascript" then
+    @execute_visual_nodejs
   end
 end
 
