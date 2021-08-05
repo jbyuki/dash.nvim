@@ -859,9 +859,26 @@ function M.execute(filename, ft, open_split, done)
                       end
                     end
 
-                    break
+                    local is_main = false
+                    for j=i+1,#aapt_output do
+                      local line = aapt_output[j]
+                      if line:match("E: activity") then
+                        break
+                      end
+
+                      local name = line:match([[Raw: "(.*)"]])
+                      if name and name == "android.intent.action.MAIN" then
+                        is_main = true
+                        break
+                      end
+                    end
+
+                    if is_main then
+                      break
+                    end
                   end
                 end
+                print("activity_name", activity_name)
 
                 handle, err = vim.loop.spawn("cmd",
                 	{

@@ -105,15 +105,34 @@ for i=1,#aapt_output do
   local line = aapt_output[i]
   if line:match("E: activity") then
     @find_name_of_activity
-    break
+    local is_main = false
+    @check_if_main_activity
+    if is_main then
+      break
+    end
   end
 end
+print("activity_name", activity_name)
 
 @find_name_of_activity+=
 for j=i+1,#aapt_output do
   local line = aapt_output[j]
   activity_name = line:match([[Raw: "(.*)"]])
   if activity_name then
+    break
+  end
+end
+
+@check_if_main_activity+=
+for j=i+1,#aapt_output do
+  local line = aapt_output[j]
+  if line:match("E: activity") then
+    break
+  end
+
+  local name = line:match([[Raw: "(.*)"]])
+  if name and name == "android.intent.action.MAIN" then
+    is_main = true
     break
   end
 end
