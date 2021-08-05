@@ -20,6 +20,7 @@ Supported
 | _Vimscript_ | :seedling: || :seedling: | |
 | _C++ / Visual Studio_ | :seedling: || :seedling: | |
 | Matlab | || | |
+| _Kotlin, Java / Android_ | :seedling: || | |
 
 Can be used in conjunction with [ntangle.nvim](https://github.com/jbyuki/ntangle.nvim).
 

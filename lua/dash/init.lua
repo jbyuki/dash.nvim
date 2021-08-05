@@ -818,6 +818,115 @@ function M.execute(filename, ft, open_split, done)
     		args = {"--headless", "-u", "NONE", "-c", "source " .. filename, "-c", "exit"},
     		cwd = ".",
     	}, finish)
+  elseif ft == "kotlin" then
+    local path = vim.api.nvim_buf_get_name(0)
+    path = path:gsub("\\", "/")
+    local root = path:match("^(.*)/app/src/main/java")
+
+    local done_compile = vim.schedule_wrap(function(code, signal)
+      if code == 0 then
+        local apk_dir = root .. "/app/build/outputs/apk/debug"
+        local apks = vim.fn.glob(apk_dir .. "/*.apk")
+        if apks == "" then
+          finish()
+        end
+
+        local apk = vim.split(apks, "\n")[1]
+
+        local done_install = vim.schedule_wrap(function(code, signal)
+          if code == 0 then
+            local aapt_output = {}
+
+            local done_aapt = vim.schedule_wrap(function(code, signal)
+              if code == 0 then
+                local pkg_name
+                for _, line in ipairs(aapt_output) do
+                  pkg_name = line:match([[package="([^"]*)"]])
+                  if pkg_name then
+                    break
+                  end
+                end
+
+                local activity_name
+                for i=1,#aapt_output do
+                  local line = aapt_output[i]
+                  if line:match("E: activity") then
+                    for j=i+1,#aapt_output do
+                      local line = aapt_output[j]
+                      activity_name = line:match([[Raw: "(.*)"]])
+                      if activity_name then
+                        break
+                      end
+                    end
+
+                    break
+                  end
+                end
+
+                handle, err = vim.loop.spawn("cmd",
+                	{
+                		stdio = {stdin, stdout, stdin},
+                		args = {string.format("/c adb shell am start -n %s/%s", pkg_name, activity_name)},
+                		cwd = root,
+                	}, finish)
+              else
+                finish()
+              end
+            end)
+
+            local aapt_stdout = vim.loop.new_pipe(false)
+            local aapt_stderr = vim.loop.new_pipe(false)
+
+            handle, err = vim.loop.spawn("cmd",
+            	{
+            		stdio = {stdin, aapt_stdout, aapt_stderr},
+            		args = {string.format("/c aapt dump xmltree %s AndroidManifest.xml", apk)},
+            		cwd = root,
+            	}, done_aapt)
+
+            aapt_stdout:read_start(function(err, data)
+              assert(not err, err)
+              if data then
+                for line in vim.gsplit(data, "\n") do
+                  table.insert(aapt_output, line)
+                end
+              end
+            end)
+
+            aapt_stderr:read_start(function(err, data)
+              assert(not err, err)
+              if data then
+                for line in vim.gsplit(data, "\n") do
+                  table.insert(aapt_output, line)
+                end
+              end
+            end)
+
+
+          else
+            finish()
+          end
+        end)
+
+        handle, err = vim.loop.spawn("cmd",
+        	{
+        		stdio = {stdin, stdout, stderr},
+        		args = {"/c adb install " .. apk},
+        		cwd = root,
+        	}, done_install)
+
+      else
+        finish()
+      end
+    end)
+
+    handle, err = vim.loop.spawn("gradlew.bat",
+    	{
+    		stdio = {stdin, stdout, stderr},
+    		args = {[[assembleDebug]]},
+    		cwd = root,
+    	}, done_compile)
+
   elseif ft == "cpp" or ft == "c" then
     local vs = M.find_sln()
     local build_path = vim.fn.fnamemodify(vs, ":h")

@@ -47,6 +47,9 @@ function M.execute(filename, ft, open_split, done)
     @spawn_nodejs_instance
   elseif ft == "vim" then
     @spawn_neovim_process_for_vimscript
+  elseif ft == "kotlin" then
+    @find_android_project_root
+    @invoke_gradle_to_build_and_install
   elseif ft == "cpp" or ft == "c" then
     @try_find_vs_solution
     if vs then
