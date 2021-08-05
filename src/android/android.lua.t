@@ -112,7 +112,6 @@ for i=1,#aapt_output do
     end
   end
 end
-print("activity_name", activity_name)
 
 @find_name_of_activity+=
 for j=i+1,#aapt_output do

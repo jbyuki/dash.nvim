@@ -878,7 +878,6 @@ function M.execute(filename, ft, open_split, done)
                     end
                   end
                 end
-                print("activity_name", activity_name)
 
                 handle, err = vim.loop.spawn("cmd",
                 	{
