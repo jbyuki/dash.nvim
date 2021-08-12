@@ -828,7 +828,7 @@ function M.execute(filename, ft, open_split, done)
         local apk_dir = root .. "/app/build/outputs/apk/debug"
         local apks = vim.fn.glob(apk_dir .. "/*.apk")
         if apks == "" then
-          finish()
+          finish(code, signal)
         end
 
         local apk = vim.split(apks, "\n")[1]
@@ -886,7 +886,7 @@ function M.execute(filename, ft, open_split, done)
                 		cwd = root,
                 	}, finish)
               else
-                finish()
+                finish(code, signal)
               end
             end)
 
@@ -920,7 +920,7 @@ function M.execute(filename, ft, open_split, done)
 
 
           else
-            finish()
+            finish(code, signal)
           end
         end)
 
@@ -932,7 +932,23 @@ function M.execute(filename, ft, open_split, done)
         	}, done_install)
 
       else
-        finish()
+        local qflist = {} 
+        for _, line in ipairs(output_lines) do
+          if line:match("^%s*ERROR") then
+            local filename, line_number, err_text = line:match("^%s*ERROR:([^.]+.%w+):(%d+):(.*)")
+
+            table.insert(qflist, {
+              filename = filename,
+              lnum = line_number,
+              text = err_text,
+              type = "E",
+            })
+
+            vim.fn.setqflist(qflist)
+          end
+        end
+
+        finish(code, signal)
       end
     end)
 

@@ -10,7 +10,9 @@ local done_compile = vim.schedule_wrap(function(code, signal)
     @find_output_apk
     @install_apk_and_launch
   else
-    finish()
+    @parse_output_gradle
+    @put_gradle_errors_in_quickfix
+    finish(code, signal)
   end
 end)
 
@@ -25,7 +27,7 @@ handle, err = vim.loop.spawn("gradlew.bat",
 local apk_dir = root .. "/app/build/outputs/apk/debug"
 local apks = vim.fn.glob(apk_dir .. "/*.apk")
 if apks == "" then
-  finish()
+  finish(code, signal)
 end
 
 local apk = vim.split(apks, "\n")[1]
@@ -35,7 +37,7 @@ local done_install = vim.schedule_wrap(function(code, signal)
   if code == 0 then
     @launch_apk
   else
-    finish()
+    finish(code, signal)
   end
 end)
 
@@ -54,7 +56,7 @@ local done_aapt = vim.schedule_wrap(function(code, signal)
     @parse_aapt_output
     @launch_activity
   else
-    finish()
+    finish(code, signal)
   end
 end)
 
