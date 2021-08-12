@@ -5,6 +5,9 @@ for _, line in ipairs(output_lines) do
   if line:match("^%s*ERROR") then
     @parse_gradle_error_line
     @put_gradle_error_into_qflist
+  elseif line:match("^%s*e:") then
+    @parse_gradle_e_line
+    @put_gradle_error_into_qflist
   end
 end
 
@@ -21,3 +24,6 @@ table.insert(qflist, {
 
 @put_gradle_error_into_qflist+=
 vim.fn.setqflist(qflist)
+
+@parse_gradle_e_line+=
+local filename, line_number, err_text = line:match("^%s*e:%s*([^.]+.%w+):%s%((%d+),%s*%d+%):(.*)")

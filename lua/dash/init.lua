@@ -945,6 +945,18 @@ function M.execute(filename, ft, open_split, done)
             })
 
             vim.fn.setqflist(qflist)
+
+          elseif line:match("^%s*e:") then
+            local filename, line_number, err_text = line:match("^%s*e:%s*([^.]+.%w+):%s%((%d+),%s*%d+%):(.*)")
+            table.insert(qflist, {
+              filename = filename,
+              lnum = line_number,
+              text = err_text,
+              type = "E",
+            })
+
+            vim.fn.setqflist(qflist)
+
           end
         end
 
