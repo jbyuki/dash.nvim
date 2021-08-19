@@ -194,6 +194,10 @@ for line in vim.gsplit(data, "\r*\n") do
   table.insert(output_lines, line)
   if #output_lines >= MAX_LINES then
     @abort_script
+    if handle then
+      handle:kill()
+      handle = nil
+    end
     error("dash.nvim: too many lines. Abort script")
   end
 end

@@ -1082,6 +1082,10 @@ function M.execute(filename, ft, open_split, done)
                   stdout:read_stop()
                   stderr:read_stop()
 
+                  if handle then
+                    handle:kill()
+                    handle = nil
+                  end
                   error("dash.nvim: too many lines. Abort script")
                 end
               end
@@ -1113,6 +1117,10 @@ function M.execute(filename, ft, open_split, done)
                   stdout:read_stop()
                   stderr:read_stop()
 
+                  if handle then
+                    handle:kill()
+                    handle = nil
+                  end
                   error("dash.nvim: too many lines. Abort script")
                 end
               end
@@ -1242,6 +1250,10 @@ function M.execute(filename, ft, open_split, done)
                     stdout:read_stop()
                     stderr:read_stop()
 
+                    if handle then
+                      handle:kill()
+                      handle = nil
+                    end
                     error("dash.nvim: too many lines. Abort script")
                   end
                 end
@@ -1273,6 +1285,10 @@ function M.execute(filename, ft, open_split, done)
                     stdout:read_stop()
                     stderr:read_stop()
 
+                    if handle then
+                      handle:kill()
+                      handle = nil
+                    end
                     error("dash.nvim: too many lines. Abort script")
                   end
                 end
@@ -1561,6 +1577,10 @@ function M.execute(filename, ft, open_split, done)
             stdout:read_stop()
             stderr:read_stop()
 
+            if handle then
+              handle:kill()
+              handle = nil
+            end
             error("dash.nvim: too many lines. Abort script")
           end
         end
@@ -1592,6 +1612,10 @@ function M.execute(filename, ft, open_split, done)
             stdout:read_stop()
             stderr:read_stop()
 
+            if handle then
+              handle:kill()
+              handle = nil
+            end
             error("dash.nvim: too many lines. Abort script")
           end
         end
