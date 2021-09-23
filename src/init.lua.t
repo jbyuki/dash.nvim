@@ -72,6 +72,7 @@ function M.execute(filename, ft, open_split, done)
     return
   end
   @if_spawn_error_print
+  @set_global_handle
   @register_pipe_callback_neovim
   if handle then
     @clear_output_lines
@@ -408,4 +409,9 @@ end
 @check_if_buffer_is_valid+=
 if not vim.api.nvim_buf_is_valid(buf) then
   return
+end
+
+@implement+=
+function M.stop()
+  @kill_global_handle
 end

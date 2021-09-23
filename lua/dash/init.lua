@@ -107,6 +107,8 @@ local previous_handle
 
 local neovim_visual_timer
 
+local global_handle
+
 local out_counter = 1
 local tests = {}
 
@@ -704,6 +706,7 @@ function M.execute(filename, ft, open_split, done)
       if not vim.api.nvim_buf_is_valid(buf) then
         return
       end
+
       if #output_lines == 0 then
         vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
       end
@@ -794,6 +797,7 @@ function M.execute(filename, ft, open_split, done)
     		args = {filename},
     		cwd = ".",
     	}, finish)
+
 
   elseif ft == "fennel" then
     handle, err = vim.loop.spawn("cmd",
@@ -1555,6 +1559,8 @@ function M.execute(filename, ft, open_split, done)
   end
   assert(handle, err)
 
+  global_handle = handle
+
   stdout:read_start(function(err, data)
     vim.schedule(function()
       assert(not err, err)
@@ -1879,6 +1885,7 @@ function M.execute_visual()
     f:close()
 
     M.execute(fname, ft, true)
+
   elseif ft == "fennel" then
     local fname = vim.fn.tempname()
     local f = io.open(fname, "w")
@@ -1900,6 +1907,12 @@ function M.execute_visual()
   end
 end
 
+function M.stop()
+  if global_handle then
+    global_handle:kill()
+    global_handle = nil
+  end
+end
 function M.try_connect(add)
   for i=1,10 do
     local ok, conn
