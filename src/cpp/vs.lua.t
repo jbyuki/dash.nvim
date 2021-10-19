@@ -58,7 +58,7 @@ local build_path = vim.fn.fnamemodify(vs, ":h")
 handle, err = vim.loop.spawn("MSBuild.exe",
 	{
 		stdio = {stdin, stdout, stderr},
-    args = { build_path },
+    args = { vs },
 		cwd = ".",
 	}, function(code, signal)
     vim.schedule(function()
@@ -74,7 +74,7 @@ end)
 
 @execute_cpp_program_on_success+=
 function execute_program()
-  local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/bin/Debug"
+  local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
   local exe_file = vim.fn.glob(bin_path .. "/*.exe")
 
 
