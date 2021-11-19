@@ -800,6 +800,8 @@ function M.execute(filename, ft, open_split, done)
 
 
   elseif ft == "tex" then
+
+    MAX_LINES = 100000
     handle, err = vim.loop.spawn("cmd",
       {
         stdio = {stdin, stdout, stderr},
