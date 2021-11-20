@@ -5,6 +5,6 @@ MAX_LINES = 100000
 handle, err = vim.loop.spawn("cmd",
   {
     stdio = {stdin, stdout, stderr},
-    args = {"/c pdflatex " .. filename},
+    args = {"/c pdflatex -interaction=nonstopmode " .. filename},
     cwd = ".",
   }, finish)
