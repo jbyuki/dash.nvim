@@ -41,7 +41,7 @@ function M.execute(filename, ft, open_split, done)
     @spawn_neovim_process
   elseif ft == "python" then
     @spawn_python_instance
-  elseif ft == "tex" then
+  elseif ft == "tex" or ft == "plaintex" then
     @spawn_tex_instance
   elseif ft == "fennel" then
     @spawn_fennel_instance
