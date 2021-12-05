@@ -799,6 +799,13 @@ function M.execute(filename, ft, open_split, done)
     	}, finish)
 
 
+  elseif ft == "go" then
+    handle, err = vim.loop.spawn("cmd",
+    	{
+    		stdio = {stdin, stdout, stderr},
+    		args = {"/c go run ."},
+    		cwd = ".",
+    	}, finish)
   elseif ft == "tex" or ft == "plaintex" then
 
     MAX_LINES = 100000
