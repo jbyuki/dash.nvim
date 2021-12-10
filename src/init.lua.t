@@ -41,6 +41,12 @@ function M.execute(filename, ft, open_split, done)
     @spawn_neovim_process
   elseif ft == "python" then
     @spawn_python_instance
+  elseif ft == "asm" then
+    local link_program
+    local execute_program
+    @spawn_nasm_instance
+    @link_nasm_program_on_success
+    @execute_nasm_program_on_success
   elseif ft == "go" then
     @spawn_go_instance
   elseif ft == "tex" or ft == "plaintex" then
@@ -206,19 +212,6 @@ for line in vim.gsplit(data, "\r*\n") do
     error("dash.nvim: too many lines. Abort script")
   end
 end
-
-@../plugin/dash.vim=
-@check_if_plugin_already_loaded
-@register_vim_commands
-
-@check_if_plugin_already_loaded+=
-if exists('g:loaded_dash')
-    finish
-endif
-let g:loaded_dash= 1
-
-@register_vim_commands+=
-command! -nargs=0 -bar DashRun lua require"dash".execute_buf()
 
 @implement+=
 function M.execute_buf()

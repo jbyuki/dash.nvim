@@ -1,7 +1,4 @@
 ##../dash
-@register_vim_commands+=
-command! -nargs=0 -bar DashDebug lua require"dash".debug_buf()
-
 @implement+=
 function M.debug_buf()
   @check_if_tangle_file
