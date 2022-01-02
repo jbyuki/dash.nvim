@@ -28,10 +28,10 @@ local obj_file = vim.fn.fnamemodify(filename, ":r") .. ".o"
 @clear_output_lines
 @clear_output_window
 @create_pipes
-handle, err = vim.loop.spawn("ld",
+handle, err = vim.loop.spawn("gcc",
   {
     stdio = {stdin, stdout, stderr},
-    args = { obj_file },
+    args = { "-no-pie", obj_file },
     cwd = ".",
   }, function(code, signal)
     vim.schedule(function()
