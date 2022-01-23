@@ -15,7 +15,7 @@ function M.execute(filename, ft, open_split, done)
   @close_split_if_different_tabpage
   @create_split_if_none
   @save_split_size
-  @close_quickfix_if_open
+  -- @close_quickfix_if_open
   @restore_split_size_if_quickfix_close
 
   @create_pipes
@@ -143,6 +143,7 @@ local execute_win, execute_buf
 
 @create_split_if_none+=
 if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+  @register_close_callback_if_first_time
   @create_new_window_for_execution
 end
 
@@ -412,3 +413,42 @@ end
 function M.stop()
   @kill_global_handle
 end
+
+@script_variables+=
+local close_callback_registered = false
+
+@register_close_callback_if_first_time+=
+if not close_callback_registered then
+  vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
+  close_callback_registered = true
+end
+
+@implement+=
+function M.close_split_if_last_one()
+  @check_that_split_is_still_open
+  @count_how_many_window_in_splits_tab
+  @if_only_window_close_it
+end
+
+@check_that_split_is_still_open+=
+if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+  return
+end
+
+@count_how_many_window_in_splits_tab+=
+local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+local win_list = vim.api.nvim_tabpage_list_wins(win_tab)
+local count_win = #win_list
+
+@if_only_window_close_it+=
+if count_win == 1 then
+  @close_vim_if_last_tabpage
+  else
+    vim.api.nvim_win_close(execute_win, true)
+    execute_win = nil
+  end
+end
+
+@close_vim_if_last_tabpage+=
+if #vim.api.nvim_list_tabpages() == 1 then
+  vim.api.nvim_command("q")

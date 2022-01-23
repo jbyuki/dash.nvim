@@ -105,6 +105,8 @@ local neovim_visual_conn
 
 local previous_handle
 
+local close_callback_registered = false
+
 local neovim_visual_timer
 
 local global_handle
@@ -627,6 +629,11 @@ function M.execute(filename, ft, open_split, done)
   end
 
   if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+    if not close_callback_registered then
+      vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
+      close_callback_registered = true
+    end
+
     local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
     local split
     local win_size
@@ -679,8 +686,7 @@ function M.execute(filename, ft, open_split, done)
 
   local execute_win_height = vim.api.nvim_win_get_height(execute_win)
 
-  vim.api.nvim_command("cclose")
-  vim.fn.setqflist({})
+  -- @close_quickfix_if_open
   vim.api.nvim_win_set_height(execute_win, execute_win_height)
 
 
@@ -2101,6 +2107,11 @@ function M.execute_visual()
     end
 
     if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+      if not close_callback_registered then
+        vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
+        close_callback_registered = true
+      end
+
       local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
       local split
       local win_size
@@ -2270,6 +2281,27 @@ function M.stop()
     global_handle = nil
   end
 end
+
+function M.close_split_if_last_one()
+  if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+    return
+  end
+
+  local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+  local win_list = vim.api.nvim_tabpage_list_wins(win_tab)
+  local count_win = #win_list
+
+  if count_win == 1 then
+    if #vim.api.nvim_list_tabpages() == 1 then
+      vim.api.nvim_command("q")
+    else
+      vim.api.nvim_win_close(execute_win, true)
+      execute_win = nil
+    end
+  end
+
+end
+
 function M.try_connect(add)
   for i=1,10 do
     local ok, conn
