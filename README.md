@@ -23,6 +23,7 @@ Supported
 | _Kotlin, Java / Android_ | :seedling: || :seedling:| |
 | _Latex_ | :seedling: || | |
 | Go | :seedling: || | |
+| GLSL / glslc | :seedling: || | |
 
 Can be used in conjunction with [ntangle.nvim](https://github.com/jbyuki/ntangle.nvim).
 

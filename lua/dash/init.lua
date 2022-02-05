@@ -1185,6 +1185,38 @@ function M.execute(filename, ft, open_split, done)
     		args = {"--headless", "-u", "NONE", "-c", "source " .. filename, "-c", "exit"},
     		cwd = ".",
     	}, finish)
+  elseif ft == "glsl" then
+    local parent = vim.fn.fnamemodify(filename, ":p:h")
+    local root = vim.fn.fnamemodify(filename, ":t:r")
+    local ext = vim.fn.fnamemodify(filename, ":e")
+
+    local finish_glsl = function(code, signal)
+      vim.schedule(function()
+        if #output_lines == 0 then
+          if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+            vim.api.nvim_win_close(execute_win, true)
+            execute_win = nil
+          end
+          if done then
+            done()
+          end
+        else
+          finish()
+        end
+      end)
+    end
+
+    local version = vim.fn.glob("C:\\VulkanSDK\\*")
+    local bin = version .. "\\Bin\\glslc.exe"
+
+
+    handle, err = vim.loop.spawn("cmd",
+    	{
+    		stdio = {stdin, stdout, stderr},
+    		args = {"/c " .. bin .. " " .. filename .. " -o " .. parent .. "\\" .. root .. "_" .. ext .. ".spv" },
+    		cwd = ".",
+    	}, finish_glsl)
+
   elseif ft == "kotlin" then
     local path = vim.api.nvim_buf_get_name(0)
     path = path:gsub("\\", "/")
