@@ -62,7 +62,7 @@ vim.fn.rpcnotify(remote, "nvim_exec_lua", [[require"dash".execute(...)]], { file
 
 @register_looping_request_to_remote+=
 local timer = vim.loop.new_timer()
-timer:start(1000, 0, vim.schedule_wrap(function()
+timer:start(100, 200, vim.schedule_wrap(function()
   @update_output_lines
   @check_if_execution_finished
 end))

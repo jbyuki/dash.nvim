@@ -66,18 +66,22 @@ function M.execute(filename, ft, open_split, done)
     @find_android_project_root
     @invoke_gradle_to_build_and_install
   elseif ft == "cpp" or ft == "c" then
-    @try_find_vs_solution
-    if vs then
-      local execute_program
-      @spawn_vs_compilation
-      @execute_cpp_program_on_success
-    else
-      @try_find_build_bat
-      if buildbat then
-        local execute_program_bat
-        @execute_build_bat
-        @execute_exe_if_exists_build_bat
+    if vim.fn.has("win32") == 1 then
+      @try_find_vs_solution
+      if vs then
+        local execute_program
+        @spawn_vs_compilation
+        @execute_cpp_program_on_success
+      else
+        @try_find_build_bat
+        if buildbat then
+          local execute_program_bat
+          @execute_build_bat
+          @execute_exe_if_exists_build_bat
+        end
       end
+    else 
+      @execute_cmake_build
     end
   elseif ft == "bf" then
     vim.schedule(function()
