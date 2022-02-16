@@ -111,6 +111,10 @@ local neovim_visual_timer
 
 local global_handle
 
+local remote
+
+local finished = true
+
 local out_counter = 1
 local tests = {}
 
@@ -707,6 +711,8 @@ function M.execute(filename, ft, open_split, done)
   end
 
 
+  finished = false
+
   local finish = function(code, signal) 
 		vim.schedule(function()
       if not vim.api.nvim_buf_is_valid(buf) then
@@ -776,6 +782,9 @@ function M.execute(filename, ft, open_split, done)
       end
 
       previous = output_lines
+
+
+      finished = true
 
       if done then
         done()
@@ -2115,7 +2124,11 @@ function M.execute_buf()
   end
   ft = vim.api.nvim_buf_get_option(0, "ft")
 
-  M.execute(filename, ft, true)
+  if not remote then
+    M.execute(filename, ft, true)
+  else
+    M.execute_remote(filename, ft, true)
+  end
 end
 
 function M.execute_visual()
@@ -2343,6 +2356,131 @@ function M.try_connect(add)
     end
     vim.wait(200)
   end
+end
+
+function M.connect(port)
+  if remote then
+    vim.fn.chanclose(remote)
+    remote = nil
+  end
+
+  remote = vim.fn.sockconnect("tcp", ("localhost:%d"):format(port), { rpc = true })
+
+end
+
+function M.get_output()
+  return output_lines
+end
+
+function M.has_finished()
+  return finished
+end
+
+function M.execute_remote(filename, ft, open_split)
+  local buf
+  if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+    local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+    local cur_tab = vim.api.nvim_get_current_tabpage()
+    if win_tab ~= cur_tab then
+      vim.api.nvim_win_close(execute_win, true)
+      execute_win = nil
+    end
+  end
+
+  if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+    if not close_callback_registered then
+      vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
+      close_callback_registered = true
+    end
+
+    local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
+    local split
+    local win_size
+    local percent = 0.2
+    if width > 2*height then
+      split = "vsp"
+      win_size = math.floor(width*percent)
+    else
+      split = "sp"
+      win_size = math.floor(height*percent)
+    end
+
+    vim.api.nvim_command("bo " .. win_size .. split)
+    execute_win = vim.api.nvim_get_current_win()
+    vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
+    vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
+
+  end
+
+  if open_split then
+    vim.api.nvim_set_current_win(execute_win)
+    vim.api.nvim_command("enew")
+    vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile nospell")
+    vim.api.nvim_command("setlocal nonumber")
+    vim.api.nvim_command("setlocal norelativenumber")
+    execute_buf = vim.api.nvim_win_get_buf(0)
+
+    local bufname
+    while true do
+      bufname = "Out #" .. out_counter
+      local oldbufnr = vim.fn.bufnr(bufname)
+      if oldbufnr == -1 then
+        break
+      end
+      out_counter = out_counter + 1
+    end
+    vim.api.nvim_buf_set_name(execute_buf, bufname)
+    out_counter = out_counter + 1
+    vim.api.nvim_command("wincmd p")
+
+    if previous then
+      vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
+    end
+
+  else
+    execute_buf = vim.api.nvim_create_buf(false, true)
+
+  end
+  buf = execute_buf
+
+  local execute_win_height = vim.api.nvim_win_get_height(execute_win)
+
+
+  vim.api.nvim_win_set_height(execute_win, execute_win_height)
+
+
+  if hl_ns then
+    vim.api.nvim_buf_clear_namespace(buf, hl_ns, 0, -1)
+  else
+    hl_ns = vim.api.nvim_create_namespace("")
+  end
+
+  local grey_id = vim.api.nvim_create_namespace("")
+  local linecount = vim.api.nvim_buf_line_count(buf)
+  for i=1,linecount  do
+    vim.api.nvim_buf_add_highlight(buf, grey_id, "NonText", i-1, 0, -1)
+  end
+
+
+  -- give relative path to avoid
+  -- inter-OS path troubles
+  -- assumption: both the client and server are
+  -- runing in the same directory
+  filename = vim.fn.fnamemodify(filename, ":.")
+  vim.fn.rpcnotify(remote, "nvim_exec_lua", [[require"dash".execute(...)]], { filename, ft, true })
+
+  local timer = vim.loop.new_timer()
+  timer:start(1000, 0, vim.schedule_wrap(function()
+    local remote_lines = vim.fn.rpcrequest(remote, "nvim_exec_lua", [[return require"dash".get_output()]], {})
+    vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, true, remote_lines)
+    local finished = vim.fn.rpcrequest(remote, "nvim_exec_lua", [[return require"dash".has_finished()]], {})
+    if finished then
+      timer:close()
+    end
+
+  end))
+
 end
 
 function M.execute_lines(lines, ft, show_pane, done)

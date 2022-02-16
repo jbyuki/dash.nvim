@@ -22,6 +22,7 @@ function M.execute(filename, ft, open_split, done)
   @clear_all_highlight
   @put_grey_highlight_over
 
+  @set_as_not_finished
   local finish = function(code, signal) 
 		vim.schedule(function()
       @check_if_buffer_is_valid
@@ -30,6 +31,8 @@ function M.execute(filename, ft, open_split, done)
       @compare_with_previous_output
       @higlight_differences
       @save_current_output
+
+      @set_as_finished
       if done then
         done()
       end
@@ -228,7 +231,11 @@ function M.execute_buf()
     @get_current_buffer_filename
   end
   @get_current_buffer_filetype
-  M.execute(filename, ft, true)
+  if not remote then
+    M.execute(filename, ft, true)
+  else
+    M.execute_remote(filename, ft, true)
+  end
 end
 
 @get_current_buffer_filename+=
