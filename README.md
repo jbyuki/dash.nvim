@@ -75,6 +75,25 @@ Start the debugger with `:DashDebug`.
 * Inspect variable: `require"dash".inspect()`
 * Inspect variable (visual): `require"dash".vinspect()`
 
+### Remote execution
+
+The execution can happen in a remote neovim instance. It uses the TCP port `7777`
+to connect to the remote process and invoke dash.nvim. For example, the host could
+be Windows and the remote WSL.
+
+Start the executing neovim instance using:
+```
+nvim --headless --listen localhost:7777
+```
+
+In the host environnement, open nvim and connect to the remote instance with:
+```
+:DashConnect
+```
+
+All the execution will happen remotely on `:DashRun`.
+
+
 Installation
 ------------
 

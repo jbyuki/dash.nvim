@@ -2645,10 +2645,10 @@ function M.execute_remote(filename, ft, open_split)
   local timer = vim.loop.new_timer()
   timer:start(100, 200, vim.schedule_wrap(function()
     local remote_lines = vim.fn.rpcrequest(remote, "nvim_exec_lua", [[return require"dash".get_output()]], {})
-    vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
     vim.api.nvim_buf_set_lines(buf, 0, -1, true, remote_lines)
     local finished = vim.fn.rpcrequest(remote, "nvim_exec_lua", [[return require"dash".has_finished()]], {})
     if finished then
+      vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
       timer:close()
     end
 

@@ -70,10 +70,10 @@ end))
 @check_if_execution_finished+=
 local finished = vim.fn.rpcrequest(remote, "nvim_exec_lua", [[return require"dash".has_finished()]], {})
 if finished then
+  @clear_grey_highlight
   timer:close()
 end
 
 @update_output_lines+=
 local remote_lines = vim.fn.rpcrequest(remote, "nvim_exec_lua", [[return require"dash".get_output()]], {})
-@clear_grey_highlight
 vim.api.nvim_buf_set_lines(buf, 0, -1, true, remote_lines)
