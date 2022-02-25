@@ -65,6 +65,10 @@ function M.execute(filename, ft, open_split, done)
   elseif ft == "kotlin" then
     @find_android_project_root
     @invoke_gradle_to_build_and_install
+  elseif ft == "sh" then
+    if vim.fn.has("unix") == 1 then
+      @execute_bash_script
+    end
   elseif ft == "cpp" or ft == "c" then
     if vim.fn.has("win32") == 1 then
       @try_find_vs_solution

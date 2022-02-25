@@ -30,7 +30,7 @@ function dash_every_line(event, lnum)
   if dash_breakpoint[lnum] or dash_step then
     dash_continue = false
     vim.fn.rpcnotify(dash_debug_conn, "nvim_exec_lua", "dash_breaked = true", {})
-
+    
     while not dash_continue do
       if dash_inspect_name then
         dash_debug_vars = {}
@@ -46,20 +46,20 @@ function dash_every_line(event, lnum)
             end
             li = li + 1
             if not ln then break end
-
+        
             dash_debug_vars[ln] = lv
           end
           stack = stack + 1
         end
-
+        
         setmetatable(dash_debug_vars, {
           __index = _G
         })
-
+        
         local str = dash_inspect_name:gsub('%a[a-zA-Z0-9_]*', 'dash_debug_vars["%0"]')
         str = str:gsub('%.dash_debug_vars%["(.-)"%]', '.%1')
         dash_inspect_name = "return " .. str
-
+        
         local f = loadstring(dash_inspect_name)
         if f then
           local ret
@@ -68,13 +68,13 @@ function dash_every_line(event, lnum)
             dash_inspect_result = string.match(dash_inspect_result, ".*:.*: (.*)")
           end
         end
-
+        
         dash_inspect_result_done = true
         dash_inspect_name = nil
       end
       vim.wait(200)
     end
-
+    
   end
 end
 
@@ -152,7 +152,7 @@ function M.find_sln()
         table.insert(dirs, file)
       end
     end
-
+    
     local build_path
     for _, dir in ipairs(dirs) do
       if vim.fn.fnamemodify(dir, ":t") == "build" then
@@ -160,7 +160,7 @@ function M.find_sln()
         break
       end
     end
-
+    
     if build_path then
       for file in vim.gsplit(vim.fn.glob(build_path .. "/*"), "\n") do
         if vim.fn.isdirectory(file) == 0 then
@@ -171,7 +171,7 @@ function M.find_sln()
         end
       end
     end
-
+    
 
     if sln_path then
       break
@@ -187,23 +187,23 @@ end
 
 function M.toggle_breakpoint()
   local lnum, _  = unpack(vim.api.nvim_win_get_cursor(0))
-
+  
   local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
-
+  
   local bufname = vim.api.nvim_buf_get_name(0)
   local signs = vim.fn.sign_getplaced(bufname, {group="dashBreakpoint", lnum=row})
-
+  
   if #signs[1].signs == 0 then
     vim.fn.sign_place(0, "dashBreakpoint", "dashBreakpointDef", bufname, {lnum = row})
   else
     vim.fn.sign_unplace("dashBreakpoint", { buffer = bufname, id = signs[1].signs[1].id })
   end
-
+  
   if debug_running then
     local name = vim.api.nvim_buf_get_name(0)
     local extext = vim.fn.fnamemodify(name, ":e:e")
     local tangle = string.match(extext, ".*%.t")
-
+    
     if tangle then
       local tangled = require"ntangle".get_location_list()
       local mapping = {}
@@ -214,32 +214,32 @@ function M.toggle_breakpoint()
           table.insert(mapping[l.lnum], lnum)
         end
       end
-
+      
       local lnums = mapping[lnum]
       for _, lnum in ipairs(lnums) do
         vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "if dash_breakpoint[" .. lnum .. "] then dash_breakpoint[" .. lnum .. "] = nil else dash_breakpoint[" .. lnum .. "] = true end" , {})
-
+        
       end
     else
       vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "if dash_breakpoint[" .. lnum .. "] then dash_breakpoint[" .. lnum .. "] = nil else dash_breakpoint[" .. lnum .. "] = true end" , {})
-
+      
     end
   end
 end
 
 function M.clear_breakpoints()
   vim.fn.sign_unplace("dashBreakpoint", { buffer = bufname })
-
+  
   if debug_running then
     vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_breakpoint = {}" , {})
-
+    
   end
 end
 
 function M.continue()
   vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[dash_continue = true]], {})
   vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[dash_step = nil]], {})
-
+  
   if signPC then
     local bufname = vim.api.nvim_buf_get_name(0)
     vim.fn.sign_unplace("dashPC", { buffer = bufname })
@@ -250,12 +250,12 @@ function M.continue()
     if dash_breaked then
       vim.schedule(function()
         local cur_lnum = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_current_line]], {})
-
+        
         local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
         local name = vim.api.nvim_buf_get_name(0)
         local extext = vim.fn.fnamemodify(name, ":e:e")
         local tangle = string.match(extext, ".*%.t")
-
+        
         if tangle then
           local tangled = require"ntangle".get_location_list()
           local mapping = {}
@@ -266,17 +266,17 @@ function M.continue()
               table.insert(mapping[l.lnum], lnum)
             end
           end
-
+          
           local bufname = vim.api.nvim_buf_get_name(0)
           local prefix, l = unpack(tangled[cur_lnum])
           signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
           vim.api.nvim_command("normal " .. l.lnum .. "ggzz")
-
+          
         else
           local bufname = vim.api.nvim_buf_get_name(0)
           signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
           vim.api.nvim_command("normal " .. cur_lnum .. "ggzz")
-
+          
         end
         print("Debugger breaked on line " .. cur_lnum .. "!")
       end)
@@ -284,36 +284,36 @@ function M.continue()
       timer:close()
     end
   end)
-
+  
 end
 
 function M.inspect()
   local name = vim.fn.expand("<cword>")
-
+  
   vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_result_done = false", {})
   vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_result = nil", {})
   vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_name = " .. vim.inspect(name), {})
-
+  
   local timer = vim.loop.new_timer()
   timer:start(0, 200, function()
     vim.schedule(function()
       local dash_inspect_result_done = vim.fn.rpcrequest(neovim_conn, 'nvim_exec_lua', [[return dash_inspect_result_done]], {})
-
+      
       if dash_inspect_result_done then
         local dash_inspect_result = vim.fn.rpcrequest(neovim_conn, 'nvim_exec_lua', [[return dash_inspect_result]], {})
-
+        
         local lines = vim.split(vim.inspect(dash_inspect_result), "\r*\n")
-
-
+        
+  
         local inspect_buf = vim.api.nvim_create_buf(false, true)
-
+        
         vim.api.nvim_buf_set_lines(inspect_buf, 0, -1, true, lines)
-
+        
         local max_width = 0
         for _, line in ipairs(lines) do
           max_width = math.max(vim.api.nvim_strwidth(line), max_width)
         end
-
+        
         local opts = {
         	relative = "cursor",
           row = 1,
@@ -322,50 +322,50 @@ function M.inspect()
         	height = #lines,
         	style = 'minimal'
         }
-
+        
         local win = vim.api.nvim_open_win(inspect_buf, false, opts)
-
+        
         M._close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, win)
         timer:close()
       end
     end)
   end)
-
+  
 end
 
 function M.vinspect()
   local _, srow, scol, _ = unpack(vim.fn.getpos("'<"))
   local _, erow, ecol, _ = unpack(vim.fn.getpos("'>"))
-
+  
   assert(srow == erow, "only single row selection are supported!")
-
+  
   local line = vim.api.nvim_buf_get_lines(0, srow-1, srow, true)[1]
   local name = string.sub(line, scol, ecol)
-
+  
   vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_result_done = false", {})
   vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_result = nil", {})
   vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_name = " .. vim.inspect(name), {})
-
+  
   local timer = vim.loop.new_timer()
   timer:start(0, 200, function()
     vim.schedule(function()
       local dash_inspect_result_done = vim.fn.rpcrequest(neovim_conn, 'nvim_exec_lua', [[return dash_inspect_result_done]], {})
-
+      
       if dash_inspect_result_done then
         local dash_inspect_result = vim.fn.rpcrequest(neovim_conn, 'nvim_exec_lua', [[return dash_inspect_result]], {})
-
+        
         local lines = vim.split(vim.inspect(dash_inspect_result), "\r*\n")
-
-
+        
+  
         local inspect_buf = vim.api.nvim_create_buf(false, true)
-
+        
         vim.api.nvim_buf_set_lines(inspect_buf, 0, -1, true, lines)
-
+        
         local max_width = 0
         for _, line in ipairs(lines) do
           max_width = math.max(vim.api.nvim_strwidth(line), max_width)
         end
-
+        
         local opts = {
         	relative = "cursor",
           row = 1,
@@ -374,32 +374,32 @@ function M.vinspect()
         	height = #lines,
         	style = 'minimal'
         }
-
+        
         local win = vim.api.nvim_open_win(inspect_buf, false, opts)
-
+        
         M._close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, win)
         timer:close()
       end
     end)
   end)
-
+  
 end
 
 function M.debug_buf()
   local name = vim.api.nvim_buf_get_name(0)
   local extext = vim.fn.fnamemodify(name, ":e:e")
   local tangle = string.match(extext, ".*%.t")
-
+  
   local filename, ft
   if tangle then
     filename = require"ntangle".getRootFilename()
-
+    
   else
     filename = vim.api.nvim_buf_get_name(0)
-
+    
   end
   ft = vim.api.nvim_buf_get_option(0, "ft")
-
+  
   M.debug(filename, ft)
 end
 
@@ -409,7 +409,7 @@ function M.debug(filename, ft)
       neovim_handle:kill()
       neovim_handle = nil
     end
-
+    
 
     if vim.fn.has('win32') then
       pipe_address = [[\\.\pipe\nvim-pipe-23493]]
@@ -417,7 +417,7 @@ function M.debug(filename, ft)
       -- NEEDS TESTING
       pipe_address = vim.fn.tempname()
     end
-
+    
     local err
     neovim_handle, err = vim.loop.spawn("nvim",
     	{
@@ -429,20 +429,20 @@ function M.debug(filename, ft)
         end)
       end
     )
-
+    
     if not neovim_handle then
       print(err)
       debug_running = false
     else
       debug_running = true
     end
-
+    
 
     neovim_conn = nil
     for i=1,10 do
       local err, success
       success, neovim_conn = pcall(vim.fn.sockconnect, "pipe", pipe_address, { rpc = true })
-
+      
       if success then
         break
       end
@@ -457,7 +457,7 @@ function M.debug(filename, ft)
     -- the caller with another pipe address
     -- to connect to the running instance
     local my_address = vim.fn.serverstart()
-
+    
     -- inspect is used here to escape characters such as \, ", ...
     vim.fn.rpcnotify(neovim_conn, 'nvim_exec', [[lua dash_debug_conn = vim.fn.sockconnect("pipe", ]] .. vim.inspect(my_address) .. [[, {rpc = true})]], true)
 
@@ -470,21 +470,21 @@ function M.debug(filename, ft)
       end
       f:close()
     end
-
+    
     vim.fn.rpcnotify(neovim_conn, "nvim_exec", "luafile " .. client_code_fn, false)
     vim.wait(200)
-
+    
 
     local bufname = vim.api.nvim_buf_get_name(0)
     local signs = vim.fn.sign_getplaced(bufname, {group="dashBreakpoint"})
-
+    
     vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_breakpoint = {}" , {})
-
-
+    
+    
     local name = vim.api.nvim_buf_get_name(0)
     local extext = vim.fn.fnamemodify(name, ":e:e")
     local tangle = string.match(extext, ".*%.t")
-
+    
     if tangle then
       local tangled = require"ntangle".get_location_list()
       local mapping = {}
@@ -495,38 +495,38 @@ function M.debug(filename, ft)
           table.insert(mapping[l.lnum], lnum)
         end
       end
-
+      
       for _, sign in ipairs(signs[1].signs) do
         local lnums = mapping[sign.lnum]
         for _, lnum in ipairs(lnums) do
           vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_breakpoint[" .. lnum .. "] = true" , {})
         end
       end
-
+      
     else
       for _, sign in ipairs(signs[1].signs) do
         vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_breakpoint[" .. sign.lnum .. "] = true" , {})
       end
     end
-
+    
     vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_filename = " .. vim.inspect(filename), {})
 
     vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[debug.sethook(dash_every_line, "l", 0)]], {})
-
+    
     vim.fn.rpcnotify(neovim_conn, "nvim_exec", "luafile " .. filename, false)
-
+    
 
     local timer = vim.loop.new_timer()
     timer:start(0, 200, function()
       if dash_breaked then
         vim.schedule(function()
           local cur_lnum = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_current_line]], {})
-
+          
           local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
           local name = vim.api.nvim_buf_get_name(0)
           local extext = vim.fn.fnamemodify(name, ":e:e")
           local tangle = string.match(extext, ".*%.t")
-
+          
           if tangle then
             local tangled = require"ntangle".get_location_list()
             local mapping = {}
@@ -537,17 +537,17 @@ function M.debug(filename, ft)
                 table.insert(mapping[l.lnum], lnum)
               end
             end
-
+            
             local bufname = vim.api.nvim_buf_get_name(0)
             local prefix, l = unpack(tangled[cur_lnum])
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
             vim.api.nvim_command("normal " .. l.lnum .. "ggzz")
-
+            
           else
             local bufname = vim.api.nvim_buf_get_name(0)
             signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
             vim.api.nvim_command("normal " .. cur_lnum .. "ggzz")
-
+            
           end
           print("Debugger breaked on line " .. cur_lnum .. "!")
         end)
@@ -555,7 +555,7 @@ function M.debug(filename, ft)
         timer:close()
       end
     end)
-
+    
 
     -- @close_connect_to_neovim_debug
     -- @kill_neovim_instance_for_debug
@@ -574,12 +574,12 @@ function M.step()
     if dash_breaked then
       vim.schedule(function()
         local cur_lnum = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_current_line]], {})
-
+        
         local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
         local name = vim.api.nvim_buf_get_name(0)
         local extext = vim.fn.fnamemodify(name, ":e:e")
         local tangle = string.match(extext, ".*%.t")
-
+        
         if tangle then
           local tangled = require"ntangle".get_location_list()
           local mapping = {}
@@ -590,17 +590,17 @@ function M.step()
               table.insert(mapping[l.lnum], lnum)
             end
           end
-
+          
           local bufname = vim.api.nvim_buf_get_name(0)
           local prefix, l = unpack(tangled[cur_lnum])
           signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = l.lnum})
           vim.api.nvim_command("normal " .. l.lnum .. "ggzz")
-
+          
         else
           local bufname = vim.api.nvim_buf_get_name(0)
           signPC = vim.fn.sign_place(0, "dashPC", "dashPCDef", bufname, {lnum = cur_lnum})
           vim.api.nvim_command("normal " .. cur_lnum .. "ggzz")
-
+          
         end
         print("Debugger breaked on line " .. cur_lnum .. "!")
       end)
@@ -608,7 +608,7 @@ function M.step()
       timer:close()
     end
   end)
-
+  
 end
 function M._close_preview_autocmd(events, winnr)
   vim.api.nvim_command("autocmd "..table.concat(events, ',').." <buffer> ++once lua pcall(vim.api.nvim_win_close, "..winnr..", true)")
@@ -621,7 +621,7 @@ function M.execute(filename, ft, open_split, done)
       previous_handle = nil
     end
   end
-
+  
   local buf
   if execute_win and vim.api.nvim_win_is_valid(execute_win) then
     local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
@@ -631,13 +631,13 @@ function M.execute(filename, ft, open_split, done)
       execute_win = nil
     end
   end
-
+  
   if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
     if not close_callback_registered then
       vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
       close_callback_registered = true
     end
-
+    
     local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
     local split
     local win_size
@@ -649,14 +649,14 @@ function M.execute(filename, ft, open_split, done)
       split = "sp"
       win_size = math.floor(height*percent)
     end
-
+    
     vim.api.nvim_command("bo " .. win_size .. split)
     execute_win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
     vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
-
+    
   end
-
+  
   if open_split then
     vim.api.nvim_set_current_win(execute_win)
     vim.api.nvim_command("enew")
@@ -664,7 +664,7 @@ function M.execute(filename, ft, open_split, done)
     vim.api.nvim_command("setlocal nonumber")
     vim.api.nvim_command("setlocal norelativenumber")
     execute_buf = vim.api.nvim_win_get_buf(0)
-
+    
     local bufname
     while true do
       bufname = "Out #" .. out_counter
@@ -677,71 +677,71 @@ function M.execute(filename, ft, open_split, done)
     vim.api.nvim_buf_set_name(execute_buf, bufname)
     out_counter = out_counter + 1
     vim.api.nvim_command("wincmd p")
-
+    
     if previous then
       vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
     end
-
+    
   else
     execute_buf = vim.api.nvim_create_buf(false, true)
-
+    
   end
   buf = execute_buf
-
+  
   local execute_win_height = vim.api.nvim_win_get_height(execute_win)
-
+  
   -- @close_quickfix_if_open
   vim.api.nvim_win_set_height(execute_win, execute_win_height)
-
+  
 
   local stdin = vim.loop.new_pipe(false)
   local stdout = vim.loop.new_pipe(false)
   local stderr = vim.loop.new_pipe(false)
-
+  
   if hl_ns then
     vim.api.nvim_buf_clear_namespace(buf, hl_ns, 0, -1)
   else
     hl_ns = vim.api.nvim_create_namespace("")
   end
-
+  
   local grey_id = vim.api.nvim_create_namespace("")
   local linecount = vim.api.nvim_buf_line_count(buf)
   for i=1,linecount  do
     vim.api.nvim_buf_add_highlight(buf, grey_id, "NonText", i-1, 0, -1)
   end
-
+  
 
   finished = false
-
+  
   local finish = function(code, signal) 
 		vim.schedule(function()
       if not vim.api.nvim_buf_is_valid(buf) then
         return
       end
-
+      
       if #output_lines == 0 then
         vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
       end
-
+      
       if #output_lines == 0 then
         vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+        
       end
-
+      
       local new_lines = {}
-
+      
       if previous then 
         local best = {}
         local best = {}
-
+        
         local A = previous
         local B = output_lines
-
+        
         best[0] = {}
         for j=0,#B do
           best[0][j] = {}
         end
-
+        
         for i=1,#A do
           best[i] = {}
           best[i][0] = {}
@@ -758,9 +758,9 @@ function M.execute(filename, ft, open_split, done)
             end
           end
         end
-
+        
         local lcs = best[#previous][#output_lines]
-
+        
         local k = 1
         for i=1,#output_lines do
           if k <= #lcs and lcs[k] == i then
@@ -769,23 +769,23 @@ function M.execute(filename, ft, open_split, done)
             table.insert(new_lines, i)
           end
         end
-
+        
       else
         for i=1,#output_lines do
           table.insert(new_lines, i)
         end
-
+        
       end
-
+      
       for _,lnum in ipairs(new_lines) do
         vim.api.nvim_buf_add_highlight(buf, hl_ns, "Search", lnum-1, 0, -1)
       end
-
+      
       previous = output_lines
-
+      
 
       finished = true
-
+      
       if done then
         done()
       end
@@ -804,7 +804,7 @@ function M.execute(filename, ft, open_split, done)
     		args = {"--headless", "-c", "luafile " .. filename, "-c", "exit"},
     		cwd = ".",
     	}, finish)
-
+    
   elseif ft == "python" then
     handle, err = vim.loop.spawn("python",
     	{
@@ -812,8 +812,8 @@ function M.execute(filename, ft, open_split, done)
     		args = {filename},
     		cwd = ".",
     	}, finish)
-
-
+    
+    
   elseif ft == "asm" then
     local link_program
     local execute_program
@@ -836,13 +836,13 @@ function M.execute(filename, ft, open_split, done)
       local obj_file = vim.fn.fnamemodify(filename, ":r") .. ".o"
 
       output_lines = {}
-
+      
       vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+      
       local stdin = vim.loop.new_pipe(false)
       local stdout = vim.loop.new_pipe(false)
       local stderr = vim.loop.new_pipe(false)
-
+      
       handle, err = vim.loop.spawn("gcc",
         {
           stdio = {stdin, stdout, stderr},
@@ -859,17 +859,17 @@ function M.execute(filename, ft, open_split, done)
         end)
 
       assert(handle, err)
-
+      
       stdout:read_start(function(err, data)
         vim.schedule(function()
           assert(not err, err)
           if data then
             if #output_lines == 0 then
               vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+              
               vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
             end
-
+            
             for line in vim.gsplit(data, "\r*\n") do
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -881,7 +881,7 @@ function M.execute(filename, ft, open_split, done)
                 handle:close()
                 stdout:read_stop()
                 stderr:read_stop()
-
+                
                 if handle then
                   handle:kill()
                   handle = nil
@@ -889,11 +889,11 @@ function M.execute(filename, ft, open_split, done)
                 error("dash.nvim: too many lines. Abort script")
               end
             end
-
+            
           end
         end)
       end)
-
+      
       stderr:read_start(function(err, data)
         vim.schedule(function()
           assert(not err, err)
@@ -901,10 +901,10 @@ function M.execute(filename, ft, open_split, done)
             local open_quickfix = false
             if #output_lines == 0 then
               vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+              
               vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
             end
-
+            
             for line in vim.gsplit(data, "\r*\n") do
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -916,7 +916,7 @@ function M.execute(filename, ft, open_split, done)
                 handle:close()
                 stdout:read_stop()
                 stderr:read_stop()
-
+                
                 if handle then
                   handle:kill()
                   handle = nil
@@ -924,13 +924,13 @@ function M.execute(filename, ft, open_split, done)
                 error("dash.nvim: too many lines. Abort script")
               end
             end
-
+            
             if ft == "lua" then
               for line in vim.gsplit(data, "\r*\n") do
                 if string.match(line, "^E%d+: Error while creating lua chunk: ") then
                   local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
-
-
+                  
+                  
                   vim.fn.setqflist({{
                     filename = fn, 
                     lnum = lnum, 
@@ -939,11 +939,11 @@ function M.execute(filename, ft, open_split, done)
                     type = 'E'
                   }})
                   open_quickfix = true
-
+                  
                 end
               end
             end
-
+            
             if ft == "vim" then
               local filename
               local in_error = false
@@ -952,14 +952,14 @@ function M.execute(filename, ft, open_split, done)
               for line in vim.gsplit(data, "\r*\n") do
                 if string.match(line, "^Error detected while processing") then
                   filename = string.match(line, "^Error detected while processing (.+):")
-
+                  
                   in_error = true
                 elseif in_error and string.match(line, "^line") then
                   lnum = string.match(line, "^line (%d+)")
-
+                  
                 elseif in_error and string.match(line, "^E%d+: ") then
                   local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
-
+                  
                   table.insert(errors, {
                     filename = filename,
                     lnum = lnum,
@@ -967,36 +967,36 @@ function M.execute(filename, ft, open_split, done)
                     text = errmsg,
                     type = 'E',
                   })
-
+                  
                 end
               end
-
+            
               vim.fn.setqflist(errors)
               if #errors > 0 then
                 open_quickfix = true
               end
             end
-
+            
             if open_quickfix then
               -- vim.api.nvim_command("copen")
             end
-
+            
           end
         end)
       end)
-
+      
 
     end
 
     function execute_program()
       output_lines = {}
-
+      
       vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+      
       local stdin = vim.loop.new_pipe(false)
       local stdout = vim.loop.new_pipe(false)
       local stderr = vim.loop.new_pipe(false)
-
+      
       handle, err = vim.loop.spawn("./a.out",
         {
           stdio = {stdin, stdout, stderr},
@@ -1004,17 +1004,17 @@ function M.execute(filename, ft, open_split, done)
         }, finish)
 
       assert(handle, err)
-
+      
       stdout:read_start(function(err, data)
         vim.schedule(function()
           assert(not err, err)
           if data then
             if #output_lines == 0 then
               vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+              
               vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
             end
-
+            
             for line in vim.gsplit(data, "\r*\n") do
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -1026,7 +1026,7 @@ function M.execute(filename, ft, open_split, done)
                 handle:close()
                 stdout:read_stop()
                 stderr:read_stop()
-
+                
                 if handle then
                   handle:kill()
                   handle = nil
@@ -1034,11 +1034,11 @@ function M.execute(filename, ft, open_split, done)
                 error("dash.nvim: too many lines. Abort script")
               end
             end
-
+            
           end
         end)
       end)
-
+      
       stderr:read_start(function(err, data)
         vim.schedule(function()
           assert(not err, err)
@@ -1046,10 +1046,10 @@ function M.execute(filename, ft, open_split, done)
             local open_quickfix = false
             if #output_lines == 0 then
               vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+              
               vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
             end
-
+            
             for line in vim.gsplit(data, "\r*\n") do
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -1061,7 +1061,7 @@ function M.execute(filename, ft, open_split, done)
                 handle:close()
                 stdout:read_stop()
                 stderr:read_stop()
-
+                
                 if handle then
                   handle:kill()
                   handle = nil
@@ -1069,13 +1069,13 @@ function M.execute(filename, ft, open_split, done)
                 error("dash.nvim: too many lines. Abort script")
               end
             end
-
+            
             if ft == "lua" then
               for line in vim.gsplit(data, "\r*\n") do
                 if string.match(line, "^E%d+: Error while creating lua chunk: ") then
                   local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
-
-
+                  
+                  
                   vim.fn.setqflist({{
                     filename = fn, 
                     lnum = lnum, 
@@ -1084,11 +1084,11 @@ function M.execute(filename, ft, open_split, done)
                     type = 'E'
                   }})
                   open_quickfix = true
-
+                  
                 end
               end
             end
-
+            
             if ft == "vim" then
               local filename
               local in_error = false
@@ -1097,14 +1097,14 @@ function M.execute(filename, ft, open_split, done)
               for line in vim.gsplit(data, "\r*\n") do
                 if string.match(line, "^Error detected while processing") then
                   filename = string.match(line, "^Error detected while processing (.+):")
-
+                  
                   in_error = true
                 elseif in_error and string.match(line, "^line") then
                   lnum = string.match(line, "^line (%d+)")
-
+                  
                 elseif in_error and string.match(line, "^E%d+: ") then
                   local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
-
+                  
                   table.insert(errors, {
                     filename = filename,
                     lnum = lnum,
@@ -1112,24 +1112,24 @@ function M.execute(filename, ft, open_split, done)
                     text = errmsg,
                     type = 'E',
                   })
-
+                  
                 end
               end
-
+            
               vim.fn.setqflist(errors)
               if #errors > 0 then
                 open_quickfix = true
               end
             end
-
+            
             if open_quickfix then
               -- vim.api.nvim_command("copen")
             end
-
+            
           end
         end)
       end)
-
+      
     end
   elseif ft == "go" then
     handle, err = vim.loop.spawn("cmd",
@@ -1148,7 +1148,7 @@ function M.execute(filename, ft, open_split, done)
             break
           end
         end 
-
+        
         if output_written then
           if execute_win and vim.api.nvim_win_is_valid(execute_win) then
             vim.api.nvim_win_close(execute_win, true)
@@ -1162,7 +1162,7 @@ function M.execute(filename, ft, open_split, done)
         end
       end)
     end
-
+    
     MAX_LINES = 100000
     handle, err = vim.loop.spawn("cmd",
       {
@@ -1170,7 +1170,7 @@ function M.execute(filename, ft, open_split, done)
         args = {"/c pdflatex -interaction=nonstopmode " .. filename},
         cwd = ".",
       }, finish_tex)
-
+    
   elseif ft == "fennel" then
     handle, err = vim.loop.spawn("cmd",
     	{
@@ -1178,7 +1178,7 @@ function M.execute(filename, ft, open_split, done)
     		args = {"/c fennel " .. filename},
     		cwd = ".",
     	}, finish)
-
+    
   elseif ft == "javascript" then
     handle, err = vim.loop.spawn("cmd",
     	{
@@ -1186,7 +1186,7 @@ function M.execute(filename, ft, open_split, done)
     		args = {"/c node " .. filename},
     		cwd = ".",
     	}, finish)
-
+    
   elseif ft == "vim" then
     handle, err = vim.loop.spawn("nvim",
     	{
@@ -1198,7 +1198,7 @@ function M.execute(filename, ft, open_split, done)
     local parent = vim.fn.fnamemodify(filename, ":p:h")
     local root = vim.fn.fnamemodify(filename, ":t:r")
     local ext = vim.fn.fnamemodify(filename, ":e")
-
+    
     local finish_glsl = function(code, signal)
       vim.schedule(function()
         if #output_lines == 0 then
@@ -1214,23 +1214,23 @@ function M.execute(filename, ft, open_split, done)
         end
       end)
     end
-
+    
     local version = vim.fn.glob("C:\\VulkanSDK\\*")
     local bin = version .. "\\Bin\\glslc.exe"
-
-
+    
+    
     handle, err = vim.loop.spawn("cmd",
     	{
     		stdio = {stdin, stdout, stderr},
     		args = {"/c " .. bin .. " " .. filename .. " -o " .. parent .. "\\" .. root .. "_" .. ext .. ".spv" },
     		cwd = ".",
     	}, finish_glsl)
-
+    
   elseif ft == "kotlin" then
     local path = vim.api.nvim_buf_get_name(0)
     path = path:gsub("\\", "/")
     local root = path:match("^(.*)/app/src/main/java")
-
+    
     local done_compile = vim.schedule_wrap(function(code, signal)
       if code == 0 then
         local apk_dir = root .. "/app/build/outputs/apk/debug"
@@ -1238,13 +1238,13 @@ function M.execute(filename, ft, open_split, done)
         if apks == "" then
           finish(code, signal)
         end
-
+        
         local apk = vim.split(apks, "\n")[1]
-
+        
         local done_install = vim.schedule_wrap(function(code, signal)
           if code == 0 then
             local aapt_output = {}
-
+            
             local done_aapt = vim.schedule_wrap(function(code, signal)
               if code == 0 then
                 local pkg_name
@@ -1254,7 +1254,7 @@ function M.execute(filename, ft, open_split, done)
                     break
                   end
                 end
-
+                
                 local activity_name
                 for i=1,#aapt_output do
                   local line = aapt_output[i]
@@ -1266,27 +1266,27 @@ function M.execute(filename, ft, open_split, done)
                         break
                       end
                     end
-
+                    
                     local is_main = false
                     for j=i+1,#aapt_output do
                       local line = aapt_output[j]
                       if line:match("E: activity") then
                         break
                       end
-
+                    
                       local name = line:match([[Raw: "(.*)"]])
                       if name and name == "android.intent.action.MAIN" then
                         is_main = true
                         break
                       end
                     end
-
+                    
                     if is_main then
                       break
                     end
                   end
                 end
-
+                
                 handle, err = vim.loop.spawn("cmd",
                 	{
                 		stdio = {stdin, stdout, stdin},
@@ -1297,17 +1297,17 @@ function M.execute(filename, ft, open_split, done)
                 finish(code, signal)
               end
             end)
-
+            
             local aapt_stdout = vim.loop.new_pipe(false)
             local aapt_stderr = vim.loop.new_pipe(false)
-
+            
             handle, err = vim.loop.spawn("cmd",
             	{
             		stdio = {stdin, aapt_stdout, aapt_stderr},
             		args = {string.format("/c aapt dump xmltree %s AndroidManifest.xml", apk)},
             		cwd = root,
             	}, done_aapt)
-
+            
             aapt_stdout:read_start(function(err, data)
               assert(not err, err)
               if data then
@@ -1316,7 +1316,7 @@ function M.execute(filename, ft, open_split, done)
                 end
               end
             end)
-
+            
             aapt_stderr:read_start(function(err, data)
               assert(not err, err)
               if data then
@@ -1325,35 +1325,35 @@ function M.execute(filename, ft, open_split, done)
                 end
               end
             end)
-
-
+            
+            
           else
             finish(code, signal)
           end
         end)
-
+        
         handle, err = vim.loop.spawn("cmd",
         	{
         		stdio = {stdin, stdout, stderr},
         		args = {"/c adb install " .. apk},
         		cwd = root,
         	}, done_install)
-
+        
       else
         local qflist = {} 
         for _, line in ipairs(output_lines) do
           if line:match("^%s*ERROR") then
             local filename, line_number, err_text = line:match("^%s*ERROR:([^.]+.%w+):(%d+):(.*)")
-
+            
             table.insert(qflist, {
               filename = filename,
               lnum = line_number,
               text = err_text,
               type = "E",
             })
-
+            
             vim.fn.setqflist(qflist)
-
+            
           elseif line:match("^%s*e:") then
             local filename, line_number, err_text = line:match("^%s*e:%s*([^.]+.%w+):%s%((%d+),%s*%d+%):(.*)")
             table.insert(qflist, {
@@ -1362,28 +1362,38 @@ function M.execute(filename, ft, open_split, done)
               text = err_text,
               type = "E",
             })
-
+            
             vim.fn.setqflist(qflist)
-
+            
           end
         end
-
+        
         finish(code, signal)
       end
     end)
-
+    
     handle, err = vim.loop.spawn("gradlew.bat",
     	{
     		stdio = {stdin, stdout, stderr},
     		args = {[[assembleDebug]]},
     		cwd = root,
     	}, done_compile)
-
+    
+  elseif ft == "sh" then
+    if vim.fn.has("unix") == 1 then
+      filename = vim.fn.fnamemodify(filename, ":.")
+      handle, err = vim.loop.spawn("./" .. filename,
+      	{
+      		stdio = {stdin, stdout, stderr},
+      		args = {},
+      		cwd = ".",
+      	}, finish)
+    end
   elseif ft == "cpp" or ft == "c" then
     if vim.fn.has("win32") == 1 then
       local vs = M.find_sln()
       local build_path = vim.fn.fnamemodify(vs, ":h")
-
+      
       if vs then
         local execute_program
         handle, err = vim.loop.spawn("MSBuild.exe",
@@ -1421,7 +1431,7 @@ function M.execute(filename, ft, open_split, done)
                     num_errors = string.match(line, "(%d+)")
                   end
                 end
-
+                
                 local qflist = {}
                 for _, line in ipairs(error_lines) do
                   table.insert(qflist, {
@@ -1431,7 +1441,7 @@ function M.execute(filename, ft, open_split, done)
                     type = "E",
                   })
                 end
-
+                
                 for _, line in ipairs(warning_lines) do
                   table.insert(qflist, {
                     filename = line[1],
@@ -1440,45 +1450,45 @@ function M.execute(filename, ft, open_split, done)
                     type = "W",
                   })
                 end
-
+                
                 vim.fn.setqflist(qflist)
-
+                
                 finish(code, signal)
               end
             end)
         end)
-
+        
         function execute_program()
           local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
           local exe_file = vim.fn.glob(bin_path .. "/*.exe")
-
-
+        
+        
           output_lines = {}
-
+          
           vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+          
           local stdin = vim.loop.new_pipe(false)
           local stdout = vim.loop.new_pipe(false)
           local stderr = vim.loop.new_pipe(false)
-
+          
           handle, err = vim.loop.spawn(exe_file,
             {
               stdio = {stdin, stdout, stderr},
               cwd = ".",
             }, finish)
-
+        
           assert(handle, err)
-
+          
           stdout:read_start(function(err, data)
             vim.schedule(function()
               assert(not err, err)
               if data then
                 if #output_lines == 0 then
                   vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+                  
                   vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                 end
-
+                
                 for line in vim.gsplit(data, "\r*\n") do
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -1490,7 +1500,7 @@ function M.execute(filename, ft, open_split, done)
                     handle:close()
                     stdout:read_stop()
                     stderr:read_stop()
-
+                    
                     if handle then
                       handle:kill()
                       handle = nil
@@ -1498,11 +1508,11 @@ function M.execute(filename, ft, open_split, done)
                     error("dash.nvim: too many lines. Abort script")
                   end
                 end
-
+                
               end
             end)
           end)
-
+          
           stderr:read_start(function(err, data)
             vim.schedule(function()
               assert(not err, err)
@@ -1510,10 +1520,10 @@ function M.execute(filename, ft, open_split, done)
                 local open_quickfix = false
                 if #output_lines == 0 then
                   vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+                  
                   vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                 end
-
+                
                 for line in vim.gsplit(data, "\r*\n") do
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -1525,7 +1535,7 @@ function M.execute(filename, ft, open_split, done)
                     handle:close()
                     stdout:read_stop()
                     stderr:read_stop()
-
+                    
                     if handle then
                       handle:kill()
                       handle = nil
@@ -1533,13 +1543,13 @@ function M.execute(filename, ft, open_split, done)
                     error("dash.nvim: too many lines. Abort script")
                   end
                 end
-
+                
                 if ft == "lua" then
                   for line in vim.gsplit(data, "\r*\n") do
                     if string.match(line, "^E%d+: Error while creating lua chunk: ") then
                       local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
-
-
+                      
+                      
                       vim.fn.setqflist({{
                         filename = fn, 
                         lnum = lnum, 
@@ -1548,11 +1558,11 @@ function M.execute(filename, ft, open_split, done)
                         type = 'E'
                       }})
                       open_quickfix = true
-
+                      
                     end
                   end
                 end
-
+                
                 if ft == "vim" then
                   local filename
                   local in_error = false
@@ -1561,14 +1571,14 @@ function M.execute(filename, ft, open_split, done)
                   for line in vim.gsplit(data, "\r*\n") do
                     if string.match(line, "^Error detected while processing") then
                       filename = string.match(line, "^Error detected while processing (.+):")
-
+                      
                       in_error = true
                     elseif in_error and string.match(line, "^line") then
                       lnum = string.match(line, "^line (%d+)")
-
+                      
                     elseif in_error and string.match(line, "^E%d+: ") then
                       local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
-
+                      
                       table.insert(errors, {
                         filename = filename,
                         lnum = lnum,
@@ -1576,31 +1586,31 @@ function M.execute(filename, ft, open_split, done)
                         text = errmsg,
                         type = 'E',
                       })
-
+                      
                     end
                   end
-
+                
                   vim.fn.setqflist(errors)
                   if #errors > 0 then
                     open_quickfix = true
                   end
                 end
-
+                
                 if open_quickfix then
                   -- vim.api.nvim_command("copen")
                 end
-
+                
               end
             end)
           end)
-
+          
         end
       else
         local fn = vim.api.nvim_buf_get_name(0)
         fn = vim.fn.fnamemodify(fn, ":p")
         local pardir = vim.fn.fnamemodify(fn, ":h")
         local buildbat = vim.fn.glob(pardir .. "/build.bat") ~= ""
-
+        
         if buildbat then
           local execute_program_bat
           handle, err = vim.loop.spawn("cmd",
@@ -1612,41 +1622,41 @@ function M.execute(filename, ft, open_split, done)
               vim.schedule(function()
                 local exe_file = vim.fn.glob(pardir .. "/bin/*.exe")
                 if code == 0 and exe_file ~= "" then
-
+          
                   execute_program_bat(exe_file)
                 else
                   finish(code, signal)
                 end
               end)
             end)
-
+          
           function execute_program_bat(exe_file)
             output_lines = {}
-
+            
             vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+            
             local stdin = vim.loop.new_pipe(false)
             local stdout = vim.loop.new_pipe(false)
             local stderr = vim.loop.new_pipe(false)
-
+            
             handle, err = vim.loop.spawn(exe_file,
               {
                 stdio = {stdin, stdout, stderr},
                 cwd = ".",
               }, finish)
-
+          
             assert(handle, err)
-
+            
             stdout:read_start(function(err, data)
               vim.schedule(function()
                 assert(not err, err)
                 if data then
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+                    
                     vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                   end
-
+                  
                   for line in vim.gsplit(data, "\r*\n") do
                     if #output_lines == 0 then
                       vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -1658,7 +1668,7 @@ function M.execute(filename, ft, open_split, done)
                       handle:close()
                       stdout:read_stop()
                       stderr:read_stop()
-
+                      
                       if handle then
                         handle:kill()
                         handle = nil
@@ -1666,11 +1676,11 @@ function M.execute(filename, ft, open_split, done)
                       error("dash.nvim: too many lines. Abort script")
                     end
                   end
-
+                  
                 end
               end)
             end)
-
+            
             stderr:read_start(function(err, data)
               vim.schedule(function()
                 assert(not err, err)
@@ -1678,10 +1688,10 @@ function M.execute(filename, ft, open_split, done)
                   local open_quickfix = false
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+                    
                     vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                   end
-
+                  
                   for line in vim.gsplit(data, "\r*\n") do
                     if #output_lines == 0 then
                       vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -1693,7 +1703,7 @@ function M.execute(filename, ft, open_split, done)
                       handle:close()
                       stdout:read_stop()
                       stderr:read_stop()
-
+                      
                       if handle then
                         handle:kill()
                         handle = nil
@@ -1701,13 +1711,13 @@ function M.execute(filename, ft, open_split, done)
                       error("dash.nvim: too many lines. Abort script")
                     end
                   end
-
+                  
                   if ft == "lua" then
                     for line in vim.gsplit(data, "\r*\n") do
                       if string.match(line, "^E%d+: Error while creating lua chunk: ") then
                         local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
-
-
+                        
+                        
                         vim.fn.setqflist({{
                           filename = fn, 
                           lnum = lnum, 
@@ -1716,11 +1726,11 @@ function M.execute(filename, ft, open_split, done)
                           type = 'E'
                         }})
                         open_quickfix = true
-
+                        
                       end
                     end
                   end
-
+                  
                   if ft == "vim" then
                     local filename
                     local in_error = false
@@ -1729,14 +1739,14 @@ function M.execute(filename, ft, open_split, done)
                     for line in vim.gsplit(data, "\r*\n") do
                       if string.match(line, "^Error detected while processing") then
                         filename = string.match(line, "^Error detected while processing (.+):")
-
+                        
                         in_error = true
                       elseif in_error and string.match(line, "^line") then
                         lnum = string.match(line, "^line (%d+)")
-
+                        
                       elseif in_error and string.match(line, "^E%d+: ") then
                         local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
-
+                        
                         table.insert(errors, {
                           filename = filename,
                           lnum = lnum,
@@ -1744,24 +1754,24 @@ function M.execute(filename, ft, open_split, done)
                           text = errmsg,
                           type = 'E',
                         })
-
+                        
                       end
                     end
-
+                  
                     vim.fn.setqflist(errors)
                     if #errors > 0 then
                       open_quickfix = true
                     end
                   end
-
+                  
                   if open_quickfix then
                     -- vim.api.nvim_command("copen")
                   end
-
+                  
                 end
               end)
             end)
-
+            
           end
         end
       end
@@ -1783,42 +1793,42 @@ function M.execute(filename, ft, open_split, done)
             end
             local exe_file = target_name and vim.fn.glob("build/" .. target_name)
             if code == 0 and exe_file and exe_file ~= "" then
-
+      
               execute_program_bat(exe_file)
             else
               finish(code, signal)
             end
           end)
         end)
-
-
+      
+      
       function execute_program_bat(exe_file)
         output_lines = {}
-
+        
         vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+        
         local stdin = vim.loop.new_pipe(false)
         local stdout = vim.loop.new_pipe(false)
         local stderr = vim.loop.new_pipe(false)
-
+        
         handle, err = vim.loop.spawn(exe_file,
           {
             stdio = {stdin, stdout, stderr},
             cwd = ".",
           }, finish)
-
+      
         assert(handle, err)
-
+        
         stdout:read_start(function(err, data)
           vim.schedule(function()
             assert(not err, err)
             if data then
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+                
                 vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
               end
-
+              
               for line in vim.gsplit(data, "\r*\n") do
                 if #output_lines == 0 then
                   vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -1830,7 +1840,7 @@ function M.execute(filename, ft, open_split, done)
                   handle:close()
                   stdout:read_stop()
                   stderr:read_stop()
-
+                  
                   if handle then
                     handle:kill()
                     handle = nil
@@ -1838,11 +1848,11 @@ function M.execute(filename, ft, open_split, done)
                   error("dash.nvim: too many lines. Abort script")
                 end
               end
-
+              
             end
           end)
         end)
-
+        
         stderr:read_start(function(err, data)
           vim.schedule(function()
             assert(not err, err)
@@ -1850,10 +1860,10 @@ function M.execute(filename, ft, open_split, done)
               local open_quickfix = false
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+                
                 vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
               end
-
+              
               for line in vim.gsplit(data, "\r*\n") do
                 if #output_lines == 0 then
                   vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -1865,7 +1875,7 @@ function M.execute(filename, ft, open_split, done)
                   handle:close()
                   stdout:read_stop()
                   stderr:read_stop()
-
+                  
                   if handle then
                     handle:kill()
                     handle = nil
@@ -1873,13 +1883,13 @@ function M.execute(filename, ft, open_split, done)
                   error("dash.nvim: too many lines. Abort script")
                 end
               end
-
+              
               if ft == "lua" then
                 for line in vim.gsplit(data, "\r*\n") do
                   if string.match(line, "^E%d+: Error while creating lua chunk: ") then
                     local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
-
-
+                    
+                    
                     vim.fn.setqflist({{
                       filename = fn, 
                       lnum = lnum, 
@@ -1888,11 +1898,11 @@ function M.execute(filename, ft, open_split, done)
                       type = 'E'
                     }})
                     open_quickfix = true
-
+                    
                   end
                 end
               end
-
+              
               if ft == "vim" then
                 local filename
                 local in_error = false
@@ -1901,14 +1911,14 @@ function M.execute(filename, ft, open_split, done)
                 for line in vim.gsplit(data, "\r*\n") do
                   if string.match(line, "^Error detected while processing") then
                     filename = string.match(line, "^Error detected while processing (.+):")
-
+                    
                     in_error = true
                   elseif in_error and string.match(line, "^line") then
                     lnum = string.match(line, "^line (%d+)")
-
+                    
                   elseif in_error and string.match(line, "^E%d+: ") then
                     local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
-
+                    
                     table.insert(errors, {
                       filename = filename,
                       lnum = lnum,
@@ -1916,26 +1926,26 @@ function M.execute(filename, ft, open_split, done)
                       text = errmsg,
                       type = 'E',
                     })
-
+                    
                   end
                 end
-
+              
                 vim.fn.setqflist(errors)
                 if #errors > 0 then
                   open_quickfix = true
                 end
               end
-
+              
               if open_quickfix then
                 -- vim.api.nvim_command("copen")
               end
-
+              
             end
           end)
         end)
-
+        
       end
-
+      
     end
   elseif ft == "bf" then
     vim.schedule(function()
@@ -1943,9 +1953,9 @@ function M.execute(filename, ft, open_split, done)
         vim.api.nvim_win_close(execute_win, true)
         execute_win = nil
       end
-
+      
       local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
-
+      
       local program = {}
       for i=1,#lines do 
         local line = lines[i]
@@ -1958,10 +1968,10 @@ function M.execute(filename, ft, open_split, done)
               col = j-1,
             })
           end
-
+          
         end
       end
-
+      
       local stack = {}
       for i, c in ipairs(program) do
         if c.ins == "[" then
@@ -1974,9 +1984,9 @@ function M.execute(filename, ft, open_split, done)
           table.remove(stack)
         end
       end
-
+      
       assert(#stack == 0, "Mismatch [")
-
+      
       state_buf = vim.api.nvim_create_buf(false, true)
       parent_width = vim.api.nvim_win_get_width(0)
       parent_height = vim.api.nvim_win_get_height(0)
@@ -1990,37 +2000,37 @@ function M.execute(filename, ft, open_split, done)
         height = win_height,
         style = "minimal",
       })
-
-
+      
+      
       vim.api.nvim_buf_set_keymap(0, "n", "q", [[<cmd>lua require"dash".stop_bf()<CR>]], { noremap = true })
       print("Press 'q' to stop.")
-
-
+      
+      
       local tape = {}
       local ip = 1
       local dp = 1
-
+      
       local output = {}
-
+      
       timer = vim.loop.new_timer()
       timer:start(0, 50, function()
         local c = program[ip]
-
+        
         if not c then
           timer:close()
           timer = nil
           vim.schedule(function()
             vim.api.nvim_buf_clear_namespace(0, ns_hl, 0, -1)
-
+            
             vim.api.nvim_set_current_win(state_win)
-
+            
           end)
           return
         end
-
-
+        
+      
         local sdp = dp
-
+        
         if c.ins == "+" then
           tape[dp] = (tape[dp] or 0)+1
         elseif c.ins == "-" then
@@ -2040,44 +2050,44 @@ function M.execute(filename, ft, open_split, done)
         elseif c.ins == "." then
           table.insert(output, string.char(tape[dp] or 0))
         end
-
+        
         if not tape[dp] then
           tape[dp] = 0
         end
-
+        
         vim.schedule(function()
           vim.api.nvim_buf_clear_namespace(0, ns_hl, 0, -1)
-
+          
           vim.api.nvim_buf_set_extmark(0, ns_hl, c.row, c.col, {
             hl_group = "IncSearch",
             end_col = c.col+1,
           })
-
+          
           function a()
           end
-
-
+          
+      
           local lines = {}
-
+          
           table.insert(lines, table.concat(tape, " ") or "")
-
+          
           local start = 0
           for i=1,sdp-1 do
             start = start + string.len(tostring(tape[i])) + 1
           end
-
+          
           local outlines = vim.split(table.concat(output), "\r*\n")
           for _, line in ipairs(outlines) do
             table.insert(lines, line)
           end
-
+          
           vim.api.nvim_buf_set_lines(state_buf, 0, -1, true, lines)
-
+          
           local max_width = 0
           for _, line in ipairs(lines) do
             max_width = math.max(string.len(line), max_width)
           end
-
+          
           if max_width > win_width then
             win_width = max_width
             vim.api.nvim_win_set_config(state_win, {
@@ -2088,7 +2098,7 @@ function M.execute(filename, ft, open_split, done)
               height = win_height,
             })
           end
-
+          
           if #lines > win_height then
             win_height = #lines
             vim.api.nvim_win_set_config(state_win, {
@@ -2099,55 +2109,55 @@ function M.execute(filename, ft, open_split, done)
               height = win_height,
             })
           end
-
+          
           vim.api.nvim_buf_clear_namespace(state_buf, ns_hl2, 0, -1)
           local succ = pcall(vim.api.nvim_buf_set_extmark, state_buf, ns_hl2, 0, start, {
             hl_group = "IncSearch",
             end_col = start + string.len(tostring(tape[sdp]))
           })
-
+          
           if not succ then
             timer:close()
             return
           end
-
-
+          
+          
         end)
         ip = ip+1
-
+        
       end)
-
+      
       function M.stop_bf()
         vim.api.nvim_buf_clear_namespace(0, ns_hl, 0, -1)
-
+        
         vim.api.nvim_buf_del_keymap(0, "n", "q")
-
+        
         vim.api.nvim_set_current_win(state_win)
-
+        
         if timer then
           timer:close()
           timer = nil
         end
-
+        
       end
-
+      
     end)
     return
   end
   assert(handle, err)
-
+  
   global_handle = handle
-
+  
   stdout:read_start(function(err, data)
     vim.schedule(function()
       assert(not err, err)
       if data then
         if #output_lines == 0 then
           vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+          
           vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
         end
-
+        
         for line in vim.gsplit(data, "\r*\n") do
           if #output_lines == 0 then
             vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -2159,7 +2169,7 @@ function M.execute(filename, ft, open_split, done)
             handle:close()
             stdout:read_stop()
             stderr:read_stop()
-
+            
             if handle then
               handle:kill()
               handle = nil
@@ -2167,11 +2177,11 @@ function M.execute(filename, ft, open_split, done)
             error("dash.nvim: too many lines. Abort script")
           end
         end
-
+        
       end
     end)
   end)
-
+  
   stderr:read_start(function(err, data)
     vim.schedule(function()
       assert(not err, err)
@@ -2179,10 +2189,10 @@ function M.execute(filename, ft, open_split, done)
         local open_quickfix = false
         if #output_lines == 0 then
           vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
+          
           vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
         end
-
+        
         for line in vim.gsplit(data, "\r*\n") do
           if #output_lines == 0 then
             vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
@@ -2194,7 +2204,7 @@ function M.execute(filename, ft, open_split, done)
             handle:close()
             stdout:read_stop()
             stderr:read_stop()
-
+            
             if handle then
               handle:kill()
               handle = nil
@@ -2202,13 +2212,13 @@ function M.execute(filename, ft, open_split, done)
             error("dash.nvim: too many lines. Abort script")
           end
         end
-
+        
         if ft == "lua" then
           for line in vim.gsplit(data, "\r*\n") do
             if string.match(line, "^E%d+: Error while creating lua chunk: ") then
               local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
-
-
+              
+              
               vim.fn.setqflist({{
                 filename = fn, 
                 lnum = lnum, 
@@ -2217,11 +2227,11 @@ function M.execute(filename, ft, open_split, done)
                 type = 'E'
               }})
               open_quickfix = true
-
+              
             end
           end
         end
-
+        
         if ft == "vim" then
           local filename
           local in_error = false
@@ -2230,14 +2240,14 @@ function M.execute(filename, ft, open_split, done)
           for line in vim.gsplit(data, "\r*\n") do
             if string.match(line, "^Error detected while processing") then
               filename = string.match(line, "^Error detected while processing (.+):")
-
+              
               in_error = true
             elseif in_error and string.match(line, "^line") then
               lnum = string.match(line, "^line (%d+)")
-
+              
             elseif in_error and string.match(line, "^E%d+: ") then
               local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
-
+              
               table.insert(errors, {
                 filename = filename,
                 lnum = lnum,
@@ -2245,29 +2255,29 @@ function M.execute(filename, ft, open_split, done)
                 text = errmsg,
                 type = 'E',
               })
-
+              
             end
           end
-
+        
           vim.fn.setqflist(errors)
           if #errors > 0 then
             open_quickfix = true
           end
         end
-
+        
         if open_quickfix then
           -- vim.api.nvim_command("copen")
         end
-
+        
       end
     end)
   end)
-
+  
   if handle then
     output_lines = {}
-
+    
     previous_handle = handle
-
+    
   end
 end
 
@@ -2278,25 +2288,25 @@ function M.execute_buf()
     if neovim_visual_timer then
       neovim_visual_timer:close()
     end
-
+    
     return
   end
-
+  
 
   local name = vim.api.nvim_buf_get_name(0)
   local extext = vim.fn.fnamemodify(name, ":e:e")
   local tangle = string.match(extext, ".*%.t")
-
+  
   local filename, ft
   if tangle then
     filename = require"ntangle".getRootFilename()
-
+    
   else
     filename = vim.api.nvim_buf_get_name(0)
-
+    
   end
   ft = vim.api.nvim_buf_get_option(0, "ft")
-
+  
   if not remote then
     M.execute(filename, ft, true)
   else
@@ -2306,11 +2316,11 @@ end
 
 function M.execute_visual()
   ft = vim.api.nvim_buf_get_option(0, "ft")
-
+  
   local _, start, _, _ = unpack(vim.fn.getpos("'<"))
   local _, finish, _, _ = unpack(vim.fn.getpos("'>"))
   local lines = vim.api.nvim_buf_get_lines(0, start-1, finish, true)
-
+  
 
   if ft  == "lua" then
     local open_split = true
@@ -2323,13 +2333,13 @@ function M.execute_visual()
         execute_win = nil
       end
     end
-
+    
     if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
       if not close_callback_registered then
         vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
         close_callback_registered = true
       end
-
+      
       local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
       local split
       local win_size
@@ -2341,14 +2351,14 @@ function M.execute_visual()
         split = "sp"
         win_size = math.floor(height*percent)
       end
-
+      
       vim.api.nvim_command("bo " .. win_size .. split)
       execute_win = vim.api.nvim_get_current_win()
       vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
       vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
-
+      
     end
-
+    
     if open_split then
       vim.api.nvim_set_current_win(execute_win)
       vim.api.nvim_command("enew")
@@ -2356,7 +2366,7 @@ function M.execute_visual()
       vim.api.nvim_command("setlocal nonumber")
       vim.api.nvim_command("setlocal norelativenumber")
       execute_buf = vim.api.nvim_win_get_buf(0)
-
+      
       local bufname
       while true do
         bufname = "Out #" .. out_counter
@@ -2369,17 +2379,17 @@ function M.execute_visual()
       vim.api.nvim_buf_set_name(execute_buf, bufname)
       out_counter = out_counter + 1
       vim.api.nvim_command("wincmd p")
-
+      
       if previous then
         vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
       end
-
+      
     else
       execute_buf = vim.api.nvim_create_buf(false, true)
-
+      
     end
     buf = execute_buf
-
+    
 
     if not neovim_visual then
       local err, pipe_address
@@ -2389,7 +2399,7 @@ function M.execute_visual()
         -- NEEDS TESTING
         pipe_address = vim.fn.tempname()
       end
-
+      
       neovim_visual, err = vim.loop.spawn("nvim",
       	{
       		args = {"--headless", "-u", "NONE", "--listen", pipe_address},
@@ -2397,9 +2407,9 @@ function M.execute_visual()
       	}, 
         function(code, signal)
       end)
-
+      
       neovim_visual_conn = M.try_connect(pipe_address)
-
+      
       vim.fn.rpcnotify(neovim_visual_conn, "nvim_exec_lua", [[dash_output = {}]], {})
       vim.fn.rpcnotify(neovim_visual_conn, "nvim_exec_lua", [[function print(str) table.insert(dash_output, tostring(str)) end]], {})
       if neovim_visual_conn then
@@ -2412,7 +2422,7 @@ function M.execute_visual()
               neovim_visual_timer = nil
               return
             end
-
+      
             if output then
               succ, err = pcall(vim.api.nvim_buf_set_lines, execute_buf, 0, -1, true, output)
               if not succ then
@@ -2424,7 +2434,7 @@ function M.execute_visual()
           end)
         end)
       end
-
+      
     end
 
     if not neovim_visual_timer then
@@ -2438,7 +2448,7 @@ function M.execute_visual()
               neovim_visual_timer = nil
               return
             end
-
+      
             if output then
               succ, err = pcall(vim.api.nvim_buf_set_lines, execute_buf, 0, -1, true, output)
               if not succ then
@@ -2450,7 +2460,7 @@ function M.execute_visual()
           end)
         end)
       end
-
+      
     end
 
     local fname = vim.fn.tempname()
@@ -2459,9 +2469,9 @@ function M.execute_visual()
       f:write(line .. "\n")
     end
     f:close()
-
+    
     vim.fn.rpcnotify(neovim_visual_conn, "nvim_exec", [[luafile ]] .. fname, false)
-
+    
   elseif ft == "python" then
     local fname = vim.fn.tempname()
     local f = io.open(fname, "w")
@@ -2469,9 +2479,9 @@ function M.execute_visual()
       f:write(line .. "\n")
     end
     f:close()
-
+    
     M.execute(fname, ft, true)
-
+    
   elseif ft == "fennel" then
     local fname = vim.fn.tempname()
     local f = io.open(fname, "w")
@@ -2479,7 +2489,7 @@ function M.execute_visual()
       f:write(line .. "\n")
     end
     f:close()
-
+    
     M.execute(fname, ft, true)
   elseif ft == "javascript" then
     local fname = vim.fn.tempname()
@@ -2488,7 +2498,7 @@ function M.execute_visual()
       f:write(line .. "\n")
     end
     f:close()
-
+    
     M.execute(fname, ft, true)
   end
 end
@@ -2504,11 +2514,11 @@ function M.close_split_if_last_one()
   if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
     return
   end
-
+  
   local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
   local win_list = vim.api.nvim_tabpage_list_wins(win_tab)
   local count_win = #win_list
-
+  
   if count_win == 1 then
     if #vim.api.nvim_list_tabpages() == 1 then
       vim.api.nvim_command("q")
@@ -2517,7 +2527,7 @@ function M.close_split_if_last_one()
       execute_win = nil
     end
   end
-
+  
 end
 
 function M.try_connect(add)
@@ -2536,9 +2546,9 @@ function M.connect(port)
     vim.fn.chanclose(remote)
     remote = nil
   end
-
+  
   remote = vim.fn.sockconnect("tcp", ("localhost:%d"):format(port), { rpc = true })
-
+  
 end
 
 function M.get_output()
@@ -2559,13 +2569,13 @@ function M.execute_remote(filename, ft, open_split)
       execute_win = nil
     end
   end
-
+  
   if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
     if not close_callback_registered then
       vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
       close_callback_registered = true
     end
-
+    
     local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
     local split
     local win_size
@@ -2577,14 +2587,14 @@ function M.execute_remote(filename, ft, open_split)
       split = "sp"
       win_size = math.floor(height*percent)
     end
-
+    
     vim.api.nvim_command("bo " .. win_size .. split)
     execute_win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
     vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
-
+    
   end
-
+  
   if open_split then
     vim.api.nvim_set_current_win(execute_win)
     vim.api.nvim_command("enew")
@@ -2592,7 +2602,7 @@ function M.execute_remote(filename, ft, open_split)
     vim.api.nvim_command("setlocal nonumber")
     vim.api.nvim_command("setlocal norelativenumber")
     execute_buf = vim.api.nvim_win_get_buf(0)
-
+    
     local bufname
     while true do
       bufname = "Out #" .. out_counter
@@ -2605,35 +2615,35 @@ function M.execute_remote(filename, ft, open_split)
     vim.api.nvim_buf_set_name(execute_buf, bufname)
     out_counter = out_counter + 1
     vim.api.nvim_command("wincmd p")
-
+    
     if previous then
       vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
     end
-
+    
   else
     execute_buf = vim.api.nvim_create_buf(false, true)
-
+    
   end
   buf = execute_buf
-
+  
   local execute_win_height = vim.api.nvim_win_get_height(execute_win)
-
+  
 
   vim.api.nvim_win_set_height(execute_win, execute_win_height)
-
+  
 
   if hl_ns then
     vim.api.nvim_buf_clear_namespace(buf, hl_ns, 0, -1)
   else
     hl_ns = vim.api.nvim_create_namespace("")
   end
-
+  
   local grey_id = vim.api.nvim_create_namespace("")
   local linecount = vim.api.nvim_buf_line_count(buf)
   for i=1,linecount  do
     vim.api.nvim_buf_add_highlight(buf, grey_id, "NonText", i-1, 0, -1)
   end
-
+  
 
   -- give relative path to avoid
   -- inter-OS path troubles
@@ -2641,7 +2651,7 @@ function M.execute_remote(filename, ft, open_split)
   -- runing in the same directory
   filename = vim.fn.fnamemodify(filename, ":.")
   vim.fn.rpcnotify(remote, "nvim_exec_lua", [[require"dash".execute(...)]], { filename, ft, true })
-
+  
   local timer = vim.loop.new_timer()
   timer:start(100, 200, vim.schedule_wrap(function()
     local remote_lines = vim.fn.rpcrequest(remote, "nvim_exec_lua", [[return require"dash".get_output()]], {})
@@ -2651,9 +2661,9 @@ function M.execute_remote(filename, ft, open_split)
       vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
       timer:close()
     end
-
+    
   end))
-
+  
 end
 
 function M.execute_lines(lines, ft, show_pane, done)
@@ -2663,7 +2673,7 @@ function M.execute_lines(lines, ft, show_pane, done)
     f:write(line .. "\n")
   end
   f:close()
-
+  
   local augmented = function()
     os.remove(fname)
     if done then
@@ -2689,7 +2699,7 @@ function M.test()
         break
       end
     end
-
+    
     if not ok then
       results[ft] = "TIMEOUT"
     else
@@ -2699,7 +2709,7 @@ function M.test()
         results[ft] = "FAIL"
       end
     end
-
+    
   end
 
   local result_buf = vim.api.nvim_create_buf(false, true)
@@ -2713,7 +2723,7 @@ function M.test()
     for i=s+1,padding do
       line = line .. " "
     end
-
+    
     line = line .. result
     table.insert(lines, line)
     table.insert(text, result)
@@ -2731,7 +2741,7 @@ function M.test()
     end
     vim.api.nvim_buf_add_highlight(result_buf, ns_id, hl_group, i-1, padding, -1)
   end
-
+  
 end
 
 
