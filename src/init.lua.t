@@ -85,7 +85,11 @@ function M.execute(filename, ft, open_split, done)
         end
       end
     else 
-      @execute_cmake_build
+      if vim.fn.glob("Makefile") ~= "" then
+        @execute_make_build
+      else
+        @execute_cmake_build
+      end
     end
   elseif ft == "bf" then
     vim.schedule(function()
