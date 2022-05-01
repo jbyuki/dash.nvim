@@ -77,6 +77,7 @@ function execute_program()
   local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
   local exe_file = vim.fn.glob(bin_path .. "/*.exe")
 
+  @find_launch_json_vs_cpp
 
   @clear_output_lines
   @clear_output_window
@@ -84,9 +85,35 @@ function execute_program()
   handle, err = vim.loop.spawn(exe_file,
     {
       stdio = {stdin, stdout, stderr},
+      args = args,
       cwd = ".",
     }, finish)
 
   @if_spawn_error_print
   @register_pipe_callback_neovim
 end
+
+@find_launch_json_vs_cpp+=
+local args = {}
+local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/launch.json"
+
+local f = io.open(json_path, "r")
+if f then
+  local lines = {}
+  while true do
+    local line = f:read()
+    if not line then
+      break
+    end
+    table.insert(lines, line)
+  end
+
+  local content = table.concat(lines, "\n")
+  local decoded = vim.json.decode(content)
+
+  @modify_launch_config_cpp_vs
+  f.close()
+end
+
+@modify_launch_config_cpp_vs+=
+args = decoded.args

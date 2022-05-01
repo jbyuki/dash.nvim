@@ -806,12 +806,21 @@ function M.execute(filename, ft, open_split, done)
     	}, finish)
 
   elseif ft == "python" then
-    handle, err = vim.loop.spawn("python",
-    	{
-    		stdio = {stdin, stdout, stderr},
-    		args = {filename},
-    		cwd = ".",
-    	}, finish)
+    if vim.fn.has('win32') == 1 then
+      handle, err = vim.loop.spawn(vim.g.python3_host_prog or "python",
+        {
+          stdio = {stdin, stdout, stderr},
+          args = {filename},
+          cwd = ".",
+        }, finish)
+    else
+      handle, err = vim.loop.spawn(vim.g.python3_host_prog or "python3",
+        {
+          stdio = {stdin, stdout, stderr},
+          args = {filename},
+          cwd = ".",
+        }, finish)
+    end
 
 
   elseif ft == "asm" then
@@ -1462,6 +1471,27 @@ function M.execute(filename, ft, open_split, done)
           local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
           local exe_file = vim.fn.glob(bin_path .. "/*.exe")
 
+          local args = {}
+          local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/launch.json"
+
+          local f = io.open(json_path, "r")
+          if f then
+            local lines = {}
+            while true do
+              local line = f:read()
+              if not line then
+                break
+              end
+              table.insert(lines, line)
+            end
+
+            local content = table.concat(lines, "\n")
+            local decoded = vim.json.decode(content)
+
+            args = decoded.args
+            f.close()
+          end
+
 
           output_lines = {}
 
@@ -1474,6 +1504,7 @@ function M.execute(filename, ft, open_split, done)
           handle, err = vim.loop.spawn(exe_file,
             {
               stdio = {stdin, stdout, stderr},
+              args = args,
               cwd = ".",
             }, finish)
 
@@ -1605,6 +1636,7 @@ function M.execute(filename, ft, open_split, done)
           end)
 
         end
+
       else
         local fn = vim.api.nvim_buf_get_name(0)
         fn = vim.fn.fnamemodify(fn, ":p")
@@ -1788,7 +1820,7 @@ function M.execute(filename, ft, open_split, done)
               local makefile = vim.fn.glob("Makefile")
               local exe_file
               for line in io.lines(makefile) do
-                exe_file = line:match("^all:%s*(%w+)")
+                exe_file = line:match("^all%s*:%s*(%w+)")
                 if exe_file then
                   break
                 end

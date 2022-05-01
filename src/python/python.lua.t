@@ -1,11 +1,20 @@
 ##../dash
 @spawn_python_instance+=
-handle, err = vim.loop.spawn("python",
-	{
-		stdio = {stdin, stdout, stderr},
-		args = {filename},
-		cwd = ".",
-	}, finish)
+if vim.fn.has('win32') == 1 then
+  handle, err = vim.loop.spawn(vim.g.python3_host_prog or "python",
+    {
+      stdio = {stdin, stdout, stderr},
+      args = {filename},
+      cwd = ".",
+    }, finish)
+else
+  handle, err = vim.loop.spawn(vim.g.python3_host_prog or "python3",
+    {
+      stdio = {stdin, stdout, stderr},
+      args = {filename},
+      cwd = ".",
+    }, finish)
+end
 
 
 @execute_visual_python+=

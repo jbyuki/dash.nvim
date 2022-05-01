@@ -25,7 +25,7 @@ handle, err = vim.loop.spawn("make",
 local makefile = vim.fn.glob("Makefile")
 local exe_file
 for line in io.lines(makefile) do
-  exe_file = line:match("^all:%s*(%w+)")
+  exe_file = line:match("^all%s*:%s*(%w+)")
   if exe_file then
     break
   end
