@@ -69,6 +69,10 @@ function M.execute(filename, ft, open_split, done)
     if vim.fn.has("unix") == 1 then
       @execute_bash_script
     end
+  elseif ft == "verilog" or ft == "systemverilog" then
+    if vim.fn.has("unix") == 1 then
+      @execute_verilator
+    end
   elseif ft == "cpp" or ft == "c" then
     if vim.fn.has("win32") == 1 then
       @try_find_vs_solution
@@ -177,7 +181,8 @@ local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height
 local split
 local win_size
 local percent = 0.2
-if width > 2*height then
+-- if width > 2*height then
+if false then
   split = "vsp"
   win_size = math.floor(width*percent)
 else

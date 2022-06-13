@@ -94,7 +94,7 @@ function execute_program()
 end
 
 @find_launch_json_vs_cpp+=
-local args = {}
+local args = nil 
 local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/launch.json"
 
 local f = io.open(json_path, "r")

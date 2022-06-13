@@ -642,7 +642,8 @@ function M.execute(filename, ft, open_split, done)
     local split
     local win_size
     local percent = 0.2
-    if width > 2*height then
+    -- if width > 2*height then
+    if false then
       split = "vsp"
       win_size = math.floor(width*percent)
     else
@@ -807,10 +808,33 @@ function M.execute(filename, ft, open_split, done)
 
   elseif ft == "python" then
     if vim.fn.has('win32') == 1 then
+      local json_path = vim.fn.fnamemodify(filename, ":h") .. "/launch.json"
+      local args = { filename }
+      local f = io.open(json_path, "r")
+      if f then
+        local lines = {}
+        while true do
+          local line = f:read()
+          if not line then
+            break
+          end
+          table.insert(lines, line)
+        end
+
+        local content = table.concat(lines, "\n")
+        local decoded = vim.json.decode(content)
+
+        if decoded.args then
+          for _, arg in ipairs(decoded.args) do
+            table.insert(args, arg)
+          end
+        end
+        f.close()
+      end
       handle, err = vim.loop.spawn(vim.g.python3_host_prog or "python",
         {
           stdio = {stdin, stdout, stderr},
-          args = {filename},
+          args = args,
           cwd = ".",
         }, finish)
     else
@@ -1398,6 +1422,20 @@ function M.execute(filename, ft, open_split, done)
       		cwd = ".",
       	}, finish)
     end
+  elseif ft == "verilog" or ft == "systemverilog" then
+    if vim.fn.has("unix") == 1 then
+      local args = { "--cc", filename, "--assert", "--debug-emitv", "--dump-tree" }
+
+      local verilator_root = vim.loop.os_getenv("VERILATOR_ROOT")
+      assert(verilator_root, "VERILATOR_ROOT not set")
+
+      handle, err = vim.loop.spawn(verilator_root .. "/bin/verilator",
+        {
+          stdio = {stdin, stdout, stderr},
+          args = args,
+          cwd = ".",
+        }, finish)
+    end
   elseif ft == "cpp" or ft == "c" then
     if vim.fn.has("win32") == 1 then
       local vs = M.find_sln()
@@ -1471,7 +1509,7 @@ function M.execute(filename, ft, open_split, done)
           local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
           local exe_file = vim.fn.glob(bin_path .. "/*.exe")
 
-          local args = {}
+          local args = nil 
           local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/launch.json"
 
           local f = io.open(json_path, "r")
@@ -1813,7 +1851,7 @@ function M.execute(filename, ft, open_split, done)
         handle, err = vim.loop.spawn("make",
         	{
         		stdio = {stdin, stdout, stderr},
-        		args = { "all" },
+        		args = { "-j4", "all" },
         		cwd = ".",
         	}, function(code, signal)
             vim.schedule(function()
@@ -2548,7 +2586,8 @@ function M.execute_visual()
       local split
       local win_size
       local percent = 0.2
-      if width > 2*height then
+      -- if width > 2*height then
+      if false then
         split = "vsp"
         win_size = math.floor(width*percent)
       else
@@ -2712,6 +2751,7 @@ function M.stop()
     global_handle:kill()
     global_handle = nil
   end
+
 end
 
 function M.close_split_if_last_one()
@@ -2784,7 +2824,8 @@ function M.execute_remote(filename, ft, open_split)
     local split
     local win_size
     local percent = 0.2
-    if width > 2*height then
+    -- if width > 2*height then
+    if false then
       split = "vsp"
       win_size = math.floor(width*percent)
     else

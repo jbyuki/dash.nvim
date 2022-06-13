@@ -8,7 +8,7 @@ local execute_program_linux
 handle, err = vim.loop.spawn("make",
 	{
 		stdio = {stdin, stdout, stderr},
-		args = { "all" },
+		args = { "-j4", "all" },
 		cwd = ".",
 	}, function(code, signal)
     vim.schedule(function()
