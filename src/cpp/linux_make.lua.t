@@ -13,11 +13,11 @@ handle, err = vim.loop.spawn("make",
 	}, function(code, signal)
     vim.schedule(function()
       @find_target_name_in_makefile
-      if code == 0 and exe_file and exe_file ~= "" then
-        execute_program_linux(exe_file)
-      else
-        finish(code, signal)
-      end
+      -- if code == 0 and exe_file and exe_file ~= "" then
+        -- execute_program_linux(exe_file)
+      -- else
+      finish(code, signal)
+      -- end
     end)
   end)
 

@@ -94,7 +94,7 @@ local output_lines = {}
 
 local execute_win, execute_buf
 
-local MAX_LINES = 500
+local MAX_LINES = 10000
 
 local previous
 
@@ -641,9 +641,9 @@ function M.execute(filename, ft, open_split, done)
     local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
     local split
     local win_size
-    local percent = 0.2
+    local percent = 0.5
     -- if width > 2*height then
-    if false then
+    if true then
       split = "vsp"
       win_size = math.floor(width*percent)
     else
@@ -651,7 +651,7 @@ function M.execute(filename, ft, open_split, done)
       win_size = math.floor(height*percent)
     end
 
-    vim.api.nvim_command("bo " .. win_size .. split)
+    vim.api.nvim_command("to " .. win_size .. split)
     execute_win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
     vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
@@ -906,8 +906,14 @@ function M.execute(filename, ft, open_split, done)
             for line in vim.gsplit(data, "\r*\n") do
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
               else
                 vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
               end
               table.insert(output_lines, line)
               if #output_lines >= MAX_LINES then
@@ -941,8 +947,14 @@ function M.execute(filename, ft, open_split, done)
             for line in vim.gsplit(data, "\r*\n") do
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
               else
                 vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
               end
               table.insert(output_lines, line)
               if #output_lines >= MAX_LINES then
@@ -1051,8 +1063,14 @@ function M.execute(filename, ft, open_split, done)
             for line in vim.gsplit(data, "\r*\n") do
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
               else
                 vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
               end
               table.insert(output_lines, line)
               if #output_lines >= MAX_LINES then
@@ -1086,8 +1104,14 @@ function M.execute(filename, ft, open_split, done)
             for line in vim.gsplit(data, "\r*\n") do
               if #output_lines == 0 then
                 vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
               else
                 vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
               end
               table.insert(output_lines, line)
               if #output_lines >= MAX_LINES then
@@ -1561,8 +1585,14 @@ function M.execute(filename, ft, open_split, done)
                 for line in vim.gsplit(data, "\r*\n") do
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   else
                     vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   end
                   table.insert(output_lines, line)
                   if #output_lines >= MAX_LINES then
@@ -1596,8 +1626,14 @@ function M.execute(filename, ft, open_split, done)
                 for line in vim.gsplit(data, "\r*\n") do
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   else
                     vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   end
                   table.insert(output_lines, line)
                   if #output_lines >= MAX_LINES then
@@ -1730,8 +1766,14 @@ function M.execute(filename, ft, open_split, done)
                   for line in vim.gsplit(data, "\r*\n") do
                     if #output_lines == 0 then
                       vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                      local num_lines = vim.api.nvim_buf_line_count(buf)
+                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                     else
                       vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                      local num_lines = vim.api.nvim_buf_line_count(buf)
+                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                     end
                     table.insert(output_lines, line)
                     if #output_lines >= MAX_LINES then
@@ -1765,8 +1807,14 @@ function M.execute(filename, ft, open_split, done)
                   for line in vim.gsplit(data, "\r*\n") do
                     if #output_lines == 0 then
                       vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                      local num_lines = vim.api.nvim_buf_line_count(buf)
+                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                     else
                       vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                      local num_lines = vim.api.nvim_buf_line_count(buf)
+                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                     end
                     table.insert(output_lines, line)
                     if #output_lines >= MAX_LINES then
@@ -1864,11 +1912,11 @@ function M.execute(filename, ft, open_split, done)
                 end
               end
 
-              if code == 0 and exe_file and exe_file ~= "" then
-                execute_program_linux(exe_file)
-              else
-                finish(code, signal)
-              end
+              -- if code == 0 and exe_file and exe_file ~= "" then
+                -- execute_program_linux(exe_file)
+              -- else
+              finish(code, signal)
+              -- end
             end)
           end)
 
@@ -1902,8 +1950,14 @@ function M.execute(filename, ft, open_split, done)
                 for line in vim.gsplit(data, "\r*\n") do
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   else
                     vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   end
                   table.insert(output_lines, line)
                   if #output_lines >= MAX_LINES then
@@ -1937,8 +1991,14 @@ function M.execute(filename, ft, open_split, done)
                 for line in vim.gsplit(data, "\r*\n") do
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   else
                     vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   end
                   table.insert(output_lines, line)
                   if #output_lines >= MAX_LINES then
@@ -2073,8 +2133,14 @@ function M.execute(filename, ft, open_split, done)
                 for line in vim.gsplit(data, "\r*\n") do
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   else
                     vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   end
                   table.insert(output_lines, line)
                   if #output_lines >= MAX_LINES then
@@ -2108,8 +2174,14 @@ function M.execute(filename, ft, open_split, done)
                 for line in vim.gsplit(data, "\r*\n") do
                   if #output_lines == 0 then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   else
                     vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+                    local num_lines = vim.api.nvim_buf_line_count(buf)
+                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
                   end
                   table.insert(output_lines, line)
                   if #output_lines >= MAX_LINES then
@@ -2403,8 +2475,14 @@ function M.execute(filename, ft, open_split, done)
         for line in vim.gsplit(data, "\r*\n") do
           if #output_lines == 0 then
             vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+            local num_lines = vim.api.nvim_buf_line_count(buf)
+            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
           else
             vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+            local num_lines = vim.api.nvim_buf_line_count(buf)
+            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
           end
           table.insert(output_lines, line)
           if #output_lines >= MAX_LINES then
@@ -2438,8 +2516,14 @@ function M.execute(filename, ft, open_split, done)
         for line in vim.gsplit(data, "\r*\n") do
           if #output_lines == 0 then
             vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+            local num_lines = vim.api.nvim_buf_line_count(buf)
+            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
           else
             vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+            local num_lines = vim.api.nvim_buf_line_count(buf)
+            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+
           end
           table.insert(output_lines, line)
           if #output_lines >= MAX_LINES then
@@ -2585,9 +2669,9 @@ function M.execute_visual()
       local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
       local split
       local win_size
-      local percent = 0.2
+      local percent = 0.5
       -- if width > 2*height then
-      if false then
+      if true then
         split = "vsp"
         win_size = math.floor(width*percent)
       else
@@ -2595,7 +2679,7 @@ function M.execute_visual()
         win_size = math.floor(height*percent)
       end
 
-      vim.api.nvim_command("bo " .. win_size .. split)
+      vim.api.nvim_command("to " .. win_size .. split)
       execute_win = vim.api.nvim_get_current_win()
       vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
       vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
@@ -2823,9 +2907,9 @@ function M.execute_remote(filename, ft, open_split)
     local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
     local split
     local win_size
-    local percent = 0.2
+    local percent = 0.5
     -- if width > 2*height then
-    if false then
+    if true then
       split = "vsp"
       win_size = math.floor(width*percent)
     else
@@ -2833,7 +2917,7 @@ function M.execute_remote(filename, ft, open_split)
       win_size = math.floor(height*percent)
     end
 
-    vim.api.nvim_command("bo " .. win_size .. split)
+    vim.api.nvim_command("to " .. win_size .. split)
     execute_win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
     vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
@@ -2911,6 +2995,15 @@ function M.execute_remote(filename, ft, open_split)
 
 end
 
+function M.stop()
+  if previous_handle then
+    if previous_handle:is_active() then
+      previous_handle:kill()
+      previous_handle = nil
+    end
+  end
+
+end
 function M.execute_lines(lines, ft, show_pane, done)
   local fname = vim.fn.tempname()
   local f = io.open(fname, "w")

@@ -180,9 +180,9 @@ buf = execute_buf
 local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
 local split
 local win_size
-local percent = 0.2
+local percent = 0.5
 -- if width > 2*height then
-if false then
+if true then
   split = "vsp"
   win_size = math.floor(width*percent)
 else
@@ -190,7 +190,7 @@ else
   win_size = math.floor(height*percent)
 end
 
-vim.api.nvim_command("bo " .. win_size .. split)
+vim.api.nvim_command("to " .. win_size .. split)
 execute_win = vim.api.nvim_get_current_win()
 @set_window_dimension_fix
 
@@ -211,7 +211,7 @@ execute_buf = vim.api.nvim_create_buf(false, true)
 vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
 @script_variables+=
-local MAX_LINES = 500
+local MAX_LINES = 10000
 
 @append_output_to_buf+=
 if #output_lines == 0 then
@@ -222,8 +222,10 @@ end
 for line in vim.gsplit(data, "\r*\n") do
   if #output_lines == 0 then
     vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
+    @scroll_buffer_to_last_line
   else
     vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
+    @scroll_buffer_to_last_line
   end
   table.insert(output_lines, line)
   if #output_lines >= MAX_LINES then
@@ -235,6 +237,10 @@ for line in vim.gsplit(data, "\r*\n") do
     error("dash.nvim: too many lines. Abort script")
   end
 end
+
+@scroll_buffer_to_last_line+=
+local num_lines = vim.api.nvim_buf_line_count(buf)
+vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
 @implement+=
 function M.execute_buf()
