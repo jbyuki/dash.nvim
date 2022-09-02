@@ -75,7 +75,9 @@ end)
 @execute_cpp_program_on_success+=
 function execute_program()
   local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
-  local exe_file = vim.fn.glob(bin_path .. "/*.exe")
+  print(bin_path)
+  local exe_file = vim.fn.glob(bin_path .. "/**/*.exe")
+  print(exe_file)
 
   @find_launch_json_vs_cpp
 

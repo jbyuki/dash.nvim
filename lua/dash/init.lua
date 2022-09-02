@@ -1531,7 +1531,9 @@ function M.execute(filename, ft, open_split, done)
 
         function execute_program()
           local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
-          local exe_file = vim.fn.glob(bin_path .. "/*.exe")
+          print(bin_path)
+          local exe_file = vim.fn.glob(bin_path .. "/**/*.exe")
+          print(exe_file)
 
           local args = nil 
           local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/launch.json"
