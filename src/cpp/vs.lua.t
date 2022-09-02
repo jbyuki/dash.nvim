@@ -75,24 +75,34 @@ end)
 @execute_cpp_program_on_success+=
 function execute_program()
   local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
-  print(bin_path)
-  local exe_file = vim.fn.glob(bin_path .. "/**/*.exe")
-  print(exe_file)
+  local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
 
-  @find_launch_json_vs_cpp
+  local execute_program_single
+  
+  execute_program_single = function(exe_file)
+    @find_launch_json_vs_cpp
 
-  @clear_output_lines
-  @clear_output_window
-  @create_pipes
-  handle, err = vim.loop.spawn(exe_file,
-    {
-      stdio = {stdin, stdout, stderr},
-      args = args,
-      cwd = ".",
-    }, finish)
+    @clear_output_lines
+    @clear_output_window
+    @create_pipes
+    handle, err = vim.loop.spawn(exe_file,
+      {
+        stdio = {stdin, stdout, stderr},
+        args = args,
+        cwd = ".",
+      }, finish)
 
-  @if_spawn_error_print
-  @register_pipe_callback_neovim
+    @if_spawn_error_print
+    @register_pipe_callback_neovim
+  end
+
+  assert(#exes >= 0, "Not exe found")
+
+  if #exes > 1 then
+    vim.ui.select(exes, {}, execute_program_single)
+  else
+    execute_program_single(exes[1])
+  end
 end
 
 @find_launch_json_vs_cpp+=
