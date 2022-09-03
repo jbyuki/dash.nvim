@@ -273,7 +273,7 @@ local previous
 @compare_with_previous_output+=
 local new_lines = {}
 
-if previous then 
+if previous and #output_lines < 1000 then 
   local best = {}
   @find_longest_common_subsequence
   @find_current_lines_which_are_not_in_lcs

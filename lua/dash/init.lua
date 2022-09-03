@@ -731,7 +731,7 @@ function M.execute(filename, ft, open_split, done)
 
       local new_lines = {}
 
-      if previous then 
+      if previous and #output_lines < 1000 then 
         local best = {}
         local best = {}
 
