@@ -1467,10 +1467,34 @@ function M.execute(filename, ft, open_split, done)
 
       if vs then
         local execute_program
+        local compile_args = { vs }
+
+        local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/tasks.json"
+
+        local f = io.open(json_path, "r")
+        if f then
+          local lines = {}
+          while true do
+            local line = f:read()
+            if not line then
+              break
+            end
+            table.insert(lines, line)
+          end
+
+          local content = table.concat(lines, "\n")
+          local decoded = vim.json.decode(content)
+
+          if decoded.config then
+            table.insert(compile_args, ("-p:Configuration=%s"):format(decoded.config))
+          end
+          f.close()
+        end
+
         handle, err = vim.loop.spawn("MSBuild.exe",
         	{
         		stdio = {stdin, stdout, stderr},
-            args = { vs },
+            args = compile_args,
         		cwd = ".",
         	}, function(code, signal)
             vim.schedule(function()
@@ -1532,7 +1556,7 @@ function M.execute(filename, ft, open_split, done)
         end)
 
         function execute_program()
-          local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
+          local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build"
           local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
 
           local execute_program_single
@@ -1556,6 +1580,7 @@ function M.execute(filename, ft, open_split, done)
               local decoded = vim.json.decode(content)
 
               args = decoded.args
+
               f.close()
             end
 

@@ -55,10 +55,11 @@ local vs = M.find_sln()
 local build_path = vim.fn.fnamemodify(vs, ":h")
 
 @spawn_vs_compilation+=
+@find_tasks_json_cpp_vs
 handle, err = vim.loop.spawn("MSBuild.exe",
 	{
 		stdio = {stdin, stdout, stderr},
-    args = { vs },
+    args = compile_args,
 		cwd = ".",
 	}, function(code, signal)
     vim.schedule(function()
@@ -74,7 +75,7 @@ end)
 
 @execute_cpp_program_on_success+=
 function execute_program()
-  local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build/Debug"
+  local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build"
   local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
 
   local execute_program_single
@@ -129,3 +130,31 @@ end
 
 @modify_launch_config_cpp_vs+=
 args = decoded.args
+
+@find_tasks_json_cpp_vs+=
+local compile_args = { vs }
+
+local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/tasks.json"
+
+local f = io.open(json_path, "r")
+if f then
+  local lines = {}
+  while true do
+    local line = f:read()
+    if not line then
+      break
+    end
+    table.insert(lines, line)
+  end
+
+  local content = table.concat(lines, "\n")
+  local decoded = vim.json.decode(content)
+
+  @modify_task_config_cpp_vs
+  f.close()
+end
+
+@modify_task_config_cpp_vs+=
+if decoded.config then
+  table.insert(compile_args, ("-p:Configuration=%s"):format(decoded.config))
+end
