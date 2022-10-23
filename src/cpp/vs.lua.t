@@ -77,6 +77,7 @@ end)
 function execute_program()
   local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build"
   local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
+	@remove_exes
 
   local execute_program_single
   
@@ -158,3 +159,14 @@ end
 if decoded.config then
   table.insert(compile_args, ("-p:Configuration=%s"):format(decoded.config))
 end
+
+@remove_exes+=
+exes = vim.tbl_filter(function(path)
+	local filename = vim.fn.fnamemodify(path, ":t")
+	if filename == "CompilerIdC.exe" then
+		return false
+	elseif filename == "CompilerIdCXX.exe" then
+		return false
+	end
+	return true
+end, exes)

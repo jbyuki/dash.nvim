@@ -1488,6 +1488,7 @@ function M.execute(filename, ft, open_split, done)
           if decoded.config then
             table.insert(compile_args, ("-p:Configuration=%s"):format(decoded.config))
           end
+
           f.close()
         end
 
@@ -1501,55 +1502,6 @@ function M.execute(filename, ft, open_split, done)
               if code == 0 then
                 execute_program()
               else
-                local error_lines, warning_lines = {}, {}
-                if #output_lines < 1000 then
-                  for _, line in ipairs(output_lines) do
-                    if (string.find(line, ": error") or string.find(line, ": fatal error")) then
-                      if string.find(line, "LNK") then
-                        local fn,error_str = string.match(line, "^%s*(.+):.+: (.+) %[")
-                        if fn and error_str then
-                          table.insert(error_lines, {fn, -1, error_str})
-                        end
-                      elseif not string.find(line, "^ ") then
-                        local fn,lnum,error_str = string.match(line, "^(.+)%((%d+),%d+%):[^:]+: (.+) %[")
-                        if fn and lnum and error_str then
-                          table.insert(error_lines, {fn, lnum, error_str})
-                        end
-                      end
-                    elseif string.find(line, ": warning") and not string.find(line, "^ ") then
-                      local fn,lnum,warning_str = string.match(line, "^(.+)%((%d+),%d+%):[^:]+: (.+) %[")
-                      if fn and lnum and warning_str then
-                        table.insert(warning_lines, {fn, lnum, warning_str})
-                      end
-                    elseif string.find(line, "Warning%(s%)") then
-                      num_warnings = string.match(line, "(%d+)")
-                    elseif string.find(line, "Error%(s%)") then
-                      num_errors = string.match(line, "(%d+)")
-                    end
-                  end
-                end
-
-                local qflist = {}
-                for _, line in ipairs(error_lines) do
-                  table.insert(qflist, {
-                    filename = line[1],
-                    lnum = line[2],
-                    text = line[3],
-                    type = "E",
-                  })
-                end
-
-                for _, line in ipairs(warning_lines) do
-                  table.insert(qflist, {
-                    filename = line[1],
-                    lnum = line[2],
-                    text = line[3],
-                    type = "W",
-                  })
-                end
-
-                vim.fn.setqflist(qflist)
-
                 finish(code, signal)
               end
             end)
@@ -1558,6 +1510,15 @@ function M.execute(filename, ft, open_split, done)
         function execute_program()
           local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build"
           local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
+        	exes = vim.tbl_filter(function(path)
+        		local filename = vim.fn.fnamemodify(path, ":t")
+        		if filename == "CompilerIdC.exe" then
+        			return false
+        		elseif filename == "CompilerIdCXX.exe" then
+        			return false
+        		end
+        		return true
+        	end, exes)
 
           local execute_program_single
           
