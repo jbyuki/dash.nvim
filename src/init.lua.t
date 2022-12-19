@@ -212,6 +212,10 @@ vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
 @script_variables+=
 local MAX_LINES = 10000
+local output_all = ""
+
+@clear_output_lines+=
+output_all = ""
 
 @append_output_to_buf+=
 if #output_lines == 0 then
@@ -219,23 +223,19 @@ if #output_lines == 0 then
   @clear_grey_highlight
 end
 
-for line in vim.gsplit(data, "\r*\n") do
-  if #output_lines == 0 then
-    vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-    @scroll_buffer_to_last_line
-  else
-    vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-    @scroll_buffer_to_last_line
-  end
-  table.insert(output_lines, line)
-  if #output_lines >= MAX_LINES then
-    @abort_script
-    if handle then
-      handle:kill()
-      handle = nil
-    end
-    error("dash.nvim: too many lines. Abort script")
-  end
+output_all = output_all .. data
+@clear_output_window
+output_lines = vim.split(output_all, "\r*\n")
+vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+@scroll_buffer_to_last_line
+
+if #output_lines >= MAX_LINES then
+	@abort_script
+	if handle then
+		handle:kill()
+		handle = nil
+	end
+	error("dash.nvim: too many lines. Abort script")
 end
 
 @scroll_buffer_to_last_line+=

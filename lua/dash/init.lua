@@ -95,6 +95,7 @@ local output_lines = {}
 local execute_win, execute_buf
 
 local MAX_LINES = 10000
+local output_all = ""
 
 local previous
 
@@ -870,6 +871,8 @@ function M.execute(filename, ft, open_split, done)
 
       output_lines = {}
 
+      output_all = ""
+
       vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
       local stdin = vim.loop.new_pipe(false)
@@ -903,30 +906,25 @@ function M.execute(filename, ft, open_split, done)
               vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
             end
 
-            for line in vim.gsplit(data, "\r*\n") do
-              if #output_lines == 0 then
-                vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                local num_lines = vim.api.nvim_buf_line_count(buf)
-                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            output_all = output_all .. data
+            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-              else
-                vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                local num_lines = vim.api.nvim_buf_line_count(buf)
-                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            output_lines = vim.split(output_all, "\r*\n")
+            vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+            local num_lines = vim.api.nvim_buf_line_count(buf)
+            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-              end
-              table.insert(output_lines, line)
-              if #output_lines >= MAX_LINES then
-                handle:close()
-                stdout:read_stop()
-                stderr:read_stop()
 
-                if handle then
-                  handle:kill()
-                  handle = nil
-                end
-                error("dash.nvim: too many lines. Abort script")
-              end
+            if #output_lines >= MAX_LINES then
+            	handle:close()
+            	stdout:read_stop()
+            	stderr:read_stop()
+
+            	if handle then
+            		handle:kill()
+            		handle = nil
+            	end
+            	error("dash.nvim: too many lines. Abort script")
             end
 
           end
@@ -944,30 +942,25 @@ function M.execute(filename, ft, open_split, done)
               vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
             end
 
-            for line in vim.gsplit(data, "\r*\n") do
-              if #output_lines == 0 then
-                vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                local num_lines = vim.api.nvim_buf_line_count(buf)
-                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            output_all = output_all .. data
+            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-              else
-                vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                local num_lines = vim.api.nvim_buf_line_count(buf)
-                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            output_lines = vim.split(output_all, "\r*\n")
+            vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+            local num_lines = vim.api.nvim_buf_line_count(buf)
+            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-              end
-              table.insert(output_lines, line)
-              if #output_lines >= MAX_LINES then
-                handle:close()
-                stdout:read_stop()
-                stderr:read_stop()
 
-                if handle then
-                  handle:kill()
-                  handle = nil
-                end
-                error("dash.nvim: too many lines. Abort script")
-              end
+            if #output_lines >= MAX_LINES then
+            	handle:close()
+            	stdout:read_stop()
+            	stderr:read_stop()
+
+            	if handle then
+            		handle:kill()
+            		handle = nil
+            	end
+            	error("dash.nvim: too many lines. Abort script")
             end
 
             if ft == "lua" then
@@ -1036,6 +1029,8 @@ function M.execute(filename, ft, open_split, done)
     function execute_program()
       output_lines = {}
 
+      output_all = ""
+
       vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
       local stdin = vim.loop.new_pipe(false)
@@ -1060,30 +1055,25 @@ function M.execute(filename, ft, open_split, done)
               vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
             end
 
-            for line in vim.gsplit(data, "\r*\n") do
-              if #output_lines == 0 then
-                vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                local num_lines = vim.api.nvim_buf_line_count(buf)
-                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            output_all = output_all .. data
+            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-              else
-                vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                local num_lines = vim.api.nvim_buf_line_count(buf)
-                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            output_lines = vim.split(output_all, "\r*\n")
+            vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+            local num_lines = vim.api.nvim_buf_line_count(buf)
+            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-              end
-              table.insert(output_lines, line)
-              if #output_lines >= MAX_LINES then
-                handle:close()
-                stdout:read_stop()
-                stderr:read_stop()
 
-                if handle then
-                  handle:kill()
-                  handle = nil
-                end
-                error("dash.nvim: too many lines. Abort script")
-              end
+            if #output_lines >= MAX_LINES then
+            	handle:close()
+            	stdout:read_stop()
+            	stderr:read_stop()
+
+            	if handle then
+            		handle:kill()
+            		handle = nil
+            	end
+            	error("dash.nvim: too many lines. Abort script")
             end
 
           end
@@ -1101,30 +1091,25 @@ function M.execute(filename, ft, open_split, done)
               vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
             end
 
-            for line in vim.gsplit(data, "\r*\n") do
-              if #output_lines == 0 then
-                vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                local num_lines = vim.api.nvim_buf_line_count(buf)
-                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            output_all = output_all .. data
+            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-              else
-                vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                local num_lines = vim.api.nvim_buf_line_count(buf)
-                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            output_lines = vim.split(output_all, "\r*\n")
+            vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+            local num_lines = vim.api.nvim_buf_line_count(buf)
+            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-              end
-              table.insert(output_lines, line)
-              if #output_lines >= MAX_LINES then
-                handle:close()
-                stdout:read_stop()
-                stderr:read_stop()
 
-                if handle then
-                  handle:kill()
-                  handle = nil
-                end
-                error("dash.nvim: too many lines. Abort script")
-              end
+            if #output_lines >= MAX_LINES then
+            	handle:close()
+            	stdout:read_stop()
+            	stderr:read_stop()
+
+            	if handle then
+            		handle:kill()
+            		handle = nil
+            	end
+            	error("dash.nvim: too many lines. Abort script")
             end
 
             if ft == "lua" then
@@ -1548,6 +1533,8 @@ function M.execute(filename, ft, open_split, done)
 
             output_lines = {}
 
+            output_all = ""
+
             vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
             local stdin = vim.loop.new_pipe(false)
@@ -1573,30 +1560,25 @@ function M.execute(filename, ft, open_split, done)
                     vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                   end
 
-                  for line in vim.gsplit(data, "\r*\n") do
-                    if #output_lines == 0 then
-                      vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                      local num_lines = vim.api.nvim_buf_line_count(buf)
-                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                  output_all = output_all .. data
+                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-                    else
-                      vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                      local num_lines = vim.api.nvim_buf_line_count(buf)
-                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                  output_lines = vim.split(output_all, "\r*\n")
+                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+                  local num_lines = vim.api.nvim_buf_line_count(buf)
+                  vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-                    end
-                    table.insert(output_lines, line)
-                    if #output_lines >= MAX_LINES then
-                      handle:close()
-                      stdout:read_stop()
-                      stderr:read_stop()
 
-                      if handle then
-                        handle:kill()
-                        handle = nil
-                      end
-                      error("dash.nvim: too many lines. Abort script")
-                    end
+                  if #output_lines >= MAX_LINES then
+                  	handle:close()
+                  	stdout:read_stop()
+                  	stderr:read_stop()
+
+                  	if handle then
+                  		handle:kill()
+                  		handle = nil
+                  	end
+                  	error("dash.nvim: too many lines. Abort script")
                   end
 
                 end
@@ -1614,30 +1596,25 @@ function M.execute(filename, ft, open_split, done)
                     vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                   end
 
-                  for line in vim.gsplit(data, "\r*\n") do
-                    if #output_lines == 0 then
-                      vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                      local num_lines = vim.api.nvim_buf_line_count(buf)
-                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                  output_all = output_all .. data
+                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-                    else
-                      vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                      local num_lines = vim.api.nvim_buf_line_count(buf)
-                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                  output_lines = vim.split(output_all, "\r*\n")
+                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+                  local num_lines = vim.api.nvim_buf_line_count(buf)
+                  vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-                    end
-                    table.insert(output_lines, line)
-                    if #output_lines >= MAX_LINES then
-                      handle:close()
-                      stdout:read_stop()
-                      stderr:read_stop()
 
-                      if handle then
-                        handle:kill()
-                        handle = nil
-                      end
-                      error("dash.nvim: too many lines. Abort script")
-                    end
+                  if #output_lines >= MAX_LINES then
+                  	handle:close()
+                  	stdout:read_stop()
+                  	stderr:read_stop()
+
+                  	if handle then
+                  		handle:kill()
+                  		handle = nil
+                  	end
+                  	error("dash.nvim: too many lines. Abort script")
                   end
 
                   if ft == "lua" then
@@ -1739,6 +1716,8 @@ function M.execute(filename, ft, open_split, done)
           function execute_program_bat(exe_file)
             output_lines = {}
 
+            output_all = ""
+
             vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
             local stdin = vim.loop.new_pipe(false)
@@ -1763,30 +1742,25 @@ function M.execute(filename, ft, open_split, done)
                     vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                   end
 
-                  for line in vim.gsplit(data, "\r*\n") do
-                    if #output_lines == 0 then
-                      vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                      local num_lines = vim.api.nvim_buf_line_count(buf)
-                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                  output_all = output_all .. data
+                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-                    else
-                      vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                      local num_lines = vim.api.nvim_buf_line_count(buf)
-                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                  output_lines = vim.split(output_all, "\r*\n")
+                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+                  local num_lines = vim.api.nvim_buf_line_count(buf)
+                  vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-                    end
-                    table.insert(output_lines, line)
-                    if #output_lines >= MAX_LINES then
-                      handle:close()
-                      stdout:read_stop()
-                      stderr:read_stop()
 
-                      if handle then
-                        handle:kill()
-                        handle = nil
-                      end
-                      error("dash.nvim: too many lines. Abort script")
-                    end
+                  if #output_lines >= MAX_LINES then
+                  	handle:close()
+                  	stdout:read_stop()
+                  	stderr:read_stop()
+
+                  	if handle then
+                  		handle:kill()
+                  		handle = nil
+                  	end
+                  	error("dash.nvim: too many lines. Abort script")
                   end
 
                 end
@@ -1804,30 +1778,25 @@ function M.execute(filename, ft, open_split, done)
                     vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                   end
 
-                  for line in vim.gsplit(data, "\r*\n") do
-                    if #output_lines == 0 then
-                      vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                      local num_lines = vim.api.nvim_buf_line_count(buf)
-                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                  output_all = output_all .. data
+                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-                    else
-                      vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                      local num_lines = vim.api.nvim_buf_line_count(buf)
-                      vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                  output_lines = vim.split(output_all, "\r*\n")
+                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+                  local num_lines = vim.api.nvim_buf_line_count(buf)
+                  vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-                    end
-                    table.insert(output_lines, line)
-                    if #output_lines >= MAX_LINES then
-                      handle:close()
-                      stdout:read_stop()
-                      stderr:read_stop()
 
-                      if handle then
-                        handle:kill()
-                        handle = nil
-                      end
-                      error("dash.nvim: too many lines. Abort script")
-                    end
+                  if #output_lines >= MAX_LINES then
+                  	handle:close()
+                  	stdout:read_stop()
+                  	stderr:read_stop()
+
+                  	if handle then
+                  		handle:kill()
+                  		handle = nil
+                  	end
+                  	error("dash.nvim: too many lines. Abort script")
                   end
 
                   if ft == "lua" then
@@ -1923,6 +1892,8 @@ function M.execute(filename, ft, open_split, done)
         function execute_program_linux(exe_file)
           output_lines = {}
 
+          output_all = ""
+
           vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
           local stdin = vim.loop.new_pipe(false)
@@ -1947,30 +1918,25 @@ function M.execute(filename, ft, open_split, done)
                   vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                 end
 
-                for line in vim.gsplit(data, "\r*\n") do
-                  if #output_lines == 0 then
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                    local num_lines = vim.api.nvim_buf_line_count(buf)
-                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                output_all = output_all .. data
+                vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-                  else
-                    vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                    local num_lines = vim.api.nvim_buf_line_count(buf)
-                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                output_lines = vim.split(output_all, "\r*\n")
+                vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-                  end
-                  table.insert(output_lines, line)
-                  if #output_lines >= MAX_LINES then
-                    handle:close()
-                    stdout:read_stop()
-                    stderr:read_stop()
 
-                    if handle then
-                      handle:kill()
-                      handle = nil
-                    end
-                    error("dash.nvim: too many lines. Abort script")
-                  end
+                if #output_lines >= MAX_LINES then
+                	handle:close()
+                	stdout:read_stop()
+                	stderr:read_stop()
+
+                	if handle then
+                		handle:kill()
+                		handle = nil
+                	end
+                	error("dash.nvim: too many lines. Abort script")
                 end
 
               end
@@ -1988,30 +1954,25 @@ function M.execute(filename, ft, open_split, done)
                   vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                 end
 
-                for line in vim.gsplit(data, "\r*\n") do
-                  if #output_lines == 0 then
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                    local num_lines = vim.api.nvim_buf_line_count(buf)
-                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                output_all = output_all .. data
+                vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-                  else
-                    vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                    local num_lines = vim.api.nvim_buf_line_count(buf)
-                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                output_lines = vim.split(output_all, "\r*\n")
+                vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-                  end
-                  table.insert(output_lines, line)
-                  if #output_lines >= MAX_LINES then
-                    handle:close()
-                    stdout:read_stop()
-                    stderr:read_stop()
 
-                    if handle then
-                      handle:kill()
-                      handle = nil
-                    end
-                    error("dash.nvim: too many lines. Abort script")
-                  end
+                if #output_lines >= MAX_LINES then
+                	handle:close()
+                	stdout:read_stop()
+                	stderr:read_stop()
+
+                	if handle then
+                		handle:kill()
+                		handle = nil
+                	end
+                	error("dash.nvim: too many lines. Abort script")
                 end
 
                 if ft == "lua" then
@@ -2106,6 +2067,8 @@ function M.execute(filename, ft, open_split, done)
         function execute_program_bat(exe_file)
           output_lines = {}
 
+          output_all = ""
+
           vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
           local stdin = vim.loop.new_pipe(false)
@@ -2130,30 +2093,25 @@ function M.execute(filename, ft, open_split, done)
                   vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                 end
 
-                for line in vim.gsplit(data, "\r*\n") do
-                  if #output_lines == 0 then
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                    local num_lines = vim.api.nvim_buf_line_count(buf)
-                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                output_all = output_all .. data
+                vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-                  else
-                    vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                    local num_lines = vim.api.nvim_buf_line_count(buf)
-                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                output_lines = vim.split(output_all, "\r*\n")
+                vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-                  end
-                  table.insert(output_lines, line)
-                  if #output_lines >= MAX_LINES then
-                    handle:close()
-                    stdout:read_stop()
-                    stderr:read_stop()
 
-                    if handle then
-                      handle:kill()
-                      handle = nil
-                    end
-                    error("dash.nvim: too many lines. Abort script")
-                  end
+                if #output_lines >= MAX_LINES then
+                	handle:close()
+                	stdout:read_stop()
+                	stderr:read_stop()
+
+                	if handle then
+                		handle:kill()
+                		handle = nil
+                	end
+                	error("dash.nvim: too many lines. Abort script")
                 end
 
               end
@@ -2171,30 +2129,25 @@ function M.execute(filename, ft, open_split, done)
                   vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
                 end
 
-                for line in vim.gsplit(data, "\r*\n") do
-                  if #output_lines == 0 then
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-                    local num_lines = vim.api.nvim_buf_line_count(buf)
-                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                output_all = output_all .. data
+                vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-                  else
-                    vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-                    local num_lines = vim.api.nvim_buf_line_count(buf)
-                    vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                output_lines = vim.split(output_all, "\r*\n")
+                vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+                local num_lines = vim.api.nvim_buf_line_count(buf)
+                vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-                  end
-                  table.insert(output_lines, line)
-                  if #output_lines >= MAX_LINES then
-                    handle:close()
-                    stdout:read_stop()
-                    stderr:read_stop()
 
-                    if handle then
-                      handle:kill()
-                      handle = nil
-                    end
-                    error("dash.nvim: too many lines. Abort script")
-                  end
+                if #output_lines >= MAX_LINES then
+                	handle:close()
+                	stdout:read_stop()
+                	stderr:read_stop()
+
+                	if handle then
+                		handle:kill()
+                		handle = nil
+                	end
+                	error("dash.nvim: too many lines. Abort script")
                 end
 
                 if ft == "lua" then
@@ -2472,30 +2425,25 @@ function M.execute(filename, ft, open_split, done)
           vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
         end
 
-        for line in vim.gsplit(data, "\r*\n") do
-          if #output_lines == 0 then
-            vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-            local num_lines = vim.api.nvim_buf_line_count(buf)
-            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+        output_all = output_all .. data
+        vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-          else
-            vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-            local num_lines = vim.api.nvim_buf_line_count(buf)
-            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+        output_lines = vim.split(output_all, "\r*\n")
+        vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+        local num_lines = vim.api.nvim_buf_line_count(buf)
+        vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-          end
-          table.insert(output_lines, line)
-          if #output_lines >= MAX_LINES then
-            handle:close()
-            stdout:read_stop()
-            stderr:read_stop()
 
-            if handle then
-              handle:kill()
-              handle = nil
-            end
-            error("dash.nvim: too many lines. Abort script")
-          end
+        if #output_lines >= MAX_LINES then
+        	handle:close()
+        	stdout:read_stop()
+        	stderr:read_stop()
+
+        	if handle then
+        		handle:kill()
+        		handle = nil
+        	end
+        	error("dash.nvim: too many lines. Abort script")
         end
 
       end
@@ -2513,30 +2461,25 @@ function M.execute(filename, ft, open_split, done)
           vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
         end
 
-        for line in vim.gsplit(data, "\r*\n") do
-          if #output_lines == 0 then
-            vim.api.nvim_buf_set_lines(buf, 0, -1, true, { line })
-            local num_lines = vim.api.nvim_buf_line_count(buf)
-            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+        output_all = output_all .. data
+        vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
 
-          else
-            vim.api.nvim_buf_set_lines(buf, -1, -1, true, { line })
-            local num_lines = vim.api.nvim_buf_line_count(buf)
-            vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+        output_lines = vim.split(output_all, "\r*\n")
+        vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+        local num_lines = vim.api.nvim_buf_line_count(buf)
+        vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
 
-          end
-          table.insert(output_lines, line)
-          if #output_lines >= MAX_LINES then
-            handle:close()
-            stdout:read_stop()
-            stderr:read_stop()
 
-            if handle then
-              handle:kill()
-              handle = nil
-            end
-            error("dash.nvim: too many lines. Abort script")
-          end
+        if #output_lines >= MAX_LINES then
+        	handle:close()
+        	stdout:read_stop()
+        	stderr:read_stop()
+
+        	if handle then
+        		handle:kill()
+        		handle = nil
+        	end
+        	error("dash.nvim: too many lines. Abort script")
         end
 
         if ft == "lua" then
@@ -2601,6 +2544,8 @@ function M.execute(filename, ft, open_split, done)
 
   if handle then
     output_lines = {}
+
+    output_all = ""
 
     previous_handle = handle
 
