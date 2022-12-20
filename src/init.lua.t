@@ -190,7 +190,7 @@ else
   win_size = math.floor(height*percent)
 end
 
-vim.api.nvim_command("to " .. win_size .. split)
+vim.api.nvim_command("bo " .. win_size .. split)
 execute_win = vim.api.nvim_get_current_win()
 @set_window_dimension_fix
 

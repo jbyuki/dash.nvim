@@ -652,7 +652,7 @@ function M.execute(filename, ft, open_split, done)
       win_size = math.floor(height*percent)
     end
 
-    vim.api.nvim_command("to " .. win_size .. split)
+    vim.api.nvim_command("bo " .. win_size .. split)
     execute_win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
     vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
@@ -2624,7 +2624,7 @@ function M.execute_visual()
         win_size = math.floor(height*percent)
       end
 
-      vim.api.nvim_command("to " .. win_size .. split)
+      vim.api.nvim_command("bo " .. win_size .. split)
       execute_win = vim.api.nvim_get_current_win()
       vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
       vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
@@ -2862,7 +2862,7 @@ function M.execute_remote(filename, ft, open_split)
       win_size = math.floor(height*percent)
     end
 
-    vim.api.nvim_command("to " .. win_size .. split)
+    vim.api.nvim_command("bo " .. win_size .. split)
     execute_win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
     vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
