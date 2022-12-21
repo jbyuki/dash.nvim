@@ -227,6 +227,7 @@ output_all = output_all .. data
 @clear_output_window
 output_lines = vim.split(output_all, "\r*\n")
 vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+
 @scroll_buffer_to_last_line
 
 if #output_lines >= MAX_LINES then
@@ -239,8 +240,10 @@ if #output_lines >= MAX_LINES then
 end
 
 @scroll_buffer_to_last_line+=
-local num_lines = vim.api.nvim_buf_line_count(buf)
-vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+vim.schedule(function()
+	local num_lines = vim.api.nvim_buf_line_count(buf)
+	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+end)
 
 @implement+=
 function M.execute_buf()
