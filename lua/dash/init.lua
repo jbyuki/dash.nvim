@@ -1459,433 +1459,97 @@ function M.execute(filename, ft, open_split, done)
     end
   elseif ft == "cpp" or ft == "c" then
     if vim.fn.has("win32") == 1 then
-      local vs = M.find_sln()
-      local build_path = vim.fn.fnamemodify(vs, ":h")
-
-      if vs then
-        local execute_program
-        local compile_args = { vs }
-
-        local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/tasks.json"
-
-        local f = io.open(json_path, "r")
-        if f then
-          local lines = {}
-          while true do
-            local line = f:read()
-            if not line then
-              break
-            end
-            table.insert(lines, line)
-          end
-
-          local content = table.concat(lines, "\n")
-          local decoded = vim.json.decode(content)
-
-          if decoded.config then
-            table.insert(compile_args, ("-p:Configuration=%s"):format(decoded.config))
-          end
-
-          f.close()
-        end
-
-        handle, err = vim.loop.spawn("MSBuild.exe",
-        	{
-        		stdio = {stdin, stdout, stderr},
-            args = compile_args,
-        		cwd = ".",
-        	}, function(code, signal)
-            vim.schedule(function()
-              if code == 0 then
-                execute_program()
-              else
-                finish(code, signal)
-              end
-            end)
-        end)
-
-        function execute_program()
-          local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build"
-          local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
-        	exes = vim.tbl_filter(function(path)
-        		local filename = vim.fn.fnamemodify(path, ":t")
-        		if filename == "CompilerIdC.exe" then
-        			return false
-        		elseif filename == "CompilerIdCXX.exe" then
-        			return false
-        		end
-        		return true
-        	end, exes)
-
-          local execute_program_single
-          
-          execute_program_single = function(exe_file)
-            local args = nil 
-            local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/launch.json"
-
-            local f = io.open(json_path, "r")
-            if f then
-              local lines = {}
-              while true do
-                local line = f:read()
-                if not line then
-                  break
-                end
-                table.insert(lines, line)
-              end
-
-              local content = table.concat(lines, "\n")
-              local decoded = vim.json.decode(content)
-
-              args = decoded.args
-
-              f.close()
-            end
-
-
-            output_lines = {}
-
-            output_all = ""
-
-            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-            local stdin = vim.loop.new_pipe(false)
-            local stdout = vim.loop.new_pipe(false)
-            local stderr = vim.loop.new_pipe(false)
-
-            handle, err = vim.loop.spawn(exe_file,
-              {
-                stdio = {stdin, stdout, stderr},
-                args = args,
-                cwd = ".",
-              }, finish)
-
-            assert(handle, err)
-
-            stdout:read_start(function(err, data)
-              vim.schedule(function()
-                assert(not err, err)
-                if data then
-                  if #output_lines == 0 then
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-                    vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
-                  end
-
-                  output_all = output_all .. data
-                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-                  output_lines = vim.split(output_all, "\r*\n")
-                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
-
-                  vim.schedule(function()
-                  	local num_lines = vim.api.nvim_buf_line_count(buf)
-                  	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
-                  end)
-
-
-                  if #output_lines >= MAX_LINES then
-                  	handle:close()
-                  	stdout:read_stop()
-                  	stderr:read_stop()
-
-                  	if handle then
-                  		handle:kill()
-                  		handle = nil
-                  	end
-                  	error("dash.nvim: too many lines. Abort script")
-                  end
-
-                end
-              end)
-            end)
-
-            stderr:read_start(function(err, data)
-              vim.schedule(function()
-                assert(not err, err)
-                if data then
-                  local open_quickfix = false
-                  if #output_lines == 0 then
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-                    vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
-                  end
-
-                  output_all = output_all .. data
-                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-                  output_lines = vim.split(output_all, "\r*\n")
-                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
-
-                  vim.schedule(function()
-                  	local num_lines = vim.api.nvim_buf_line_count(buf)
-                  	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
-                  end)
-
-
-                  if #output_lines >= MAX_LINES then
-                  	handle:close()
-                  	stdout:read_stop()
-                  	stderr:read_stop()
-
-                  	if handle then
-                  		handle:kill()
-                  		handle = nil
-                  	end
-                  	error("dash.nvim: too many lines. Abort script")
-                  end
-
-                  if ft == "lua" then
-                    for line in vim.gsplit(data, "\r*\n") do
-                      if string.match(line, "^E%d+: Error while creating lua chunk: ") then
-                        local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
-
-
-                        vim.fn.setqflist({{
-                          filename = fn, 
-                          lnum = lnum, 
-                          nr = errnum,
-                          text = errmsg,
-                          type = 'E'
-                        }})
-                        open_quickfix = true
-
-                      end
-                    end
-                  end
-
-                  if ft == "vim" then
-                    local filename
-                    local in_error = false
-                    local lnum
-                    local errors = {}
-                    for line in vim.gsplit(data, "\r*\n") do
-                      if string.match(line, "^Error detected while processing") then
-                        filename = string.match(line, "^Error detected while processing (.+):")
-
-                        in_error = true
-                      elseif in_error and string.match(line, "^line") then
-                        lnum = string.match(line, "^line (%d+)")
-
-                      elseif in_error and string.match(line, "^E%d+: ") then
-                        local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
-
-                        table.insert(errors, {
-                          filename = filename,
-                          lnum = lnum,
-                          nr = errnum,
-                          text = errmsg,
-                          type = 'E',
-                        })
-
-                      end
-                    end
-
-                    vim.fn.setqflist(errors)
-                    if #errors > 0 then
-                      open_quickfix = true
-                    end
-                  end
-
-                  if open_quickfix then
-                    -- vim.api.nvim_command("copen")
-                  end
-
-                end
-              end)
-            end)
-
-          end
-
-          assert(#exes >= 0, "Not exe found")
-
-          if #exes > 1 then
-            vim.ui.select(exes, {}, execute_program_single)
-          else
-            execute_program_single(exes[1])
-          end
-        end
-
-      else
-        local fn = vim.api.nvim_buf_get_name(0)
-        fn = vim.fn.fnamemodify(fn, ":p")
-        local pardir = vim.fn.fnamemodify(fn, ":h")
-        local buildbat = vim.fn.glob(pardir .. "/build.bat") ~= ""
-
-        if buildbat then
-          local execute_program_bat
-          handle, err = vim.loop.spawn("cmd",
-          	{
-          		stdio = {stdin, stdout, stderr},
-          		args = {"/k", pardir .. "/build.bat" },
-          		cwd = ".",
-          	}, function(code, signal)
-              vim.schedule(function()
-                local exe_file = vim.fn.glob(pardir .. "/bin/*.exe")
-                if code == 0 and exe_file ~= "" then
-
-                  execute_program_bat(exe_file)
-                else
-                  finish(code, signal)
-                end
-              end)
-            end)
-
-          function execute_program_bat(exe_file)
-            output_lines = {}
-
-            output_all = ""
-
-            vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-            local stdin = vim.loop.new_pipe(false)
-            local stdout = vim.loop.new_pipe(false)
-            local stderr = vim.loop.new_pipe(false)
-
-            handle, err = vim.loop.spawn(exe_file,
-              {
-                stdio = {stdin, stdout, stderr},
-                cwd = ".",
-              }, finish)
-
-            assert(handle, err)
-
-            stdout:read_start(function(err, data)
-              vim.schedule(function()
-                assert(not err, err)
-                if data then
-                  if #output_lines == 0 then
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-                    vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
-                  end
-
-                  output_all = output_all .. data
-                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-                  output_lines = vim.split(output_all, "\r*\n")
-                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
-
-                  vim.schedule(function()
-                  	local num_lines = vim.api.nvim_buf_line_count(buf)
-                  	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
-                  end)
-
-
-                  if #output_lines >= MAX_LINES then
-                  	handle:close()
-                  	stdout:read_stop()
-                  	stderr:read_stop()
-
-                  	if handle then
-                  		handle:kill()
-                  		handle = nil
-                  	end
-                  	error("dash.nvim: too many lines. Abort script")
-                  end
-
-                end
-              end)
-            end)
-
-            stderr:read_start(function(err, data)
-              vim.schedule(function()
-                assert(not err, err)
-                if data then
-                  local open_quickfix = false
-                  if #output_lines == 0 then
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-                    vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
-                  end
-
-                  output_all = output_all .. data
-                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
-
-                  output_lines = vim.split(output_all, "\r*\n")
-                  vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
-
-                  vim.schedule(function()
-                  	local num_lines = vim.api.nvim_buf_line_count(buf)
-                  	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
-                  end)
-
-
-                  if #output_lines >= MAX_LINES then
-                  	handle:close()
-                  	stdout:read_stop()
-                  	stderr:read_stop()
-
-                  	if handle then
-                  		handle:kill()
-                  		handle = nil
-                  	end
-                  	error("dash.nvim: too many lines. Abort script")
-                  end
-
-                  if ft == "lua" then
-                    for line in vim.gsplit(data, "\r*\n") do
-                      if string.match(line, "^E%d+: Error while creating lua chunk: ") then
-                        local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
-
-
-                        vim.fn.setqflist({{
-                          filename = fn, 
-                          lnum = lnum, 
-                          nr = errnum,
-                          text = errmsg,
-                          type = 'E'
-                        }})
-                        open_quickfix = true
-
-                      end
-                    end
-                  end
-
-                  if ft == "vim" then
-                    local filename
-                    local in_error = false
-                    local lnum
-                    local errors = {}
-                    for line in vim.gsplit(data, "\r*\n") do
-                      if string.match(line, "^Error detected while processing") then
-                        filename = string.match(line, "^Error detected while processing (.+):")
-
-                        in_error = true
-                      elseif in_error and string.match(line, "^line") then
-                        lnum = string.match(line, "^line (%d+)")
-
-                      elseif in_error and string.match(line, "^E%d+: ") then
-                        local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
-
-                        table.insert(errors, {
-                          filename = filename,
-                          lnum = lnum,
-                          nr = errnum,
-                          text = errmsg,
-                          type = 'E',
-                        })
-
-                      end
-                    end
-
-                    vim.fn.setqflist(errors)
-                    if #errors > 0 then
-                      open_quickfix = true
-                    end
-                  end
-
-                  if open_quickfix then
-                    -- vim.api.nvim_command("copen")
-                  end
-
-                end
-              end)
-            end)
-
-          end
-        end
-      end
+			local path = vim.fn.expand("%:p")
+			local cmakelists_path
+			while true do
+				local parent = vim.fn.fnamemodify(path, ":h")
+				local files = {}
+				for file in vim.gsplit(vim.fn.glob(parent .. "/*"), "\n") do
+				  if vim.fn.isdirectory(file) == 0 then
+				    table.insert(files, file)
+				  end
+				end
+
+				for _, file in ipairs(files) do
+					if vim.fn.fnamemodify(file, ":t") == "CMakeLists.txt" then
+						cmakelists_path = file
+						break
+					end
+				end
+
+				if cmakelists_path then
+					break
+				end
+
+
+				if parent == path then
+					break
+				end
+				path = parent 
+			end
+
+			if cmakelists_path then
+				local build_path = vim.fn.fnamemodify(cmakelists_path, ":h") .. "/build"
+				local compile_args = { "--build",  build_path }
+
+				local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/tasks.json"
+
+				local f = io.open(json_path, "r")
+				if f then
+				  local lines = {}
+				  while true do
+				    local line = f:read()
+				    if not line then
+				      break
+				    end
+				    table.insert(lines, line)
+				  end
+
+				  local content = table.concat(lines, "\n")
+				  local decoded = vim.json.decode(content)
+
+				  if decoded.config then
+				  	table.insert(compile_args, "--config")
+				    table.insert(compile_args, decoded.config)
+				  end
+
+				  f.close()
+				end
+
+				local env = {}
+				for line in io.lines(vim.g.vsvarlist) do
+					table.insert(env, line)
+				end
+
+				assert(vim.tbl_count(env) > 0)
+
+				handle, err = vim.loop.spawn("cmake",
+					{
+						stdio = {stdin, stdout, stderr},
+				    args = compile_args,
+						cwd = ".",
+						env = env,
+					}, function(code, signal)
+				    vim.schedule(function()
+							finish(code, signal)
+				    end)
+				end)
+
+			end
+
+      -- @try_find_vs_solution
+      -- if vs then
+        -- local execute_program
+        -- @spawn_vs_compilation
+        -- @execute_cpp_program_on_success
+      -- else
+        -- @try_find_build_bat
+        -- if buildbat then
+          -- local execute_program_bat
+          -- @execute_build_bat
+          -- @execute_exe_if_exists_build_bat
+        -- end
+      -- end
     else 
       if vim.fn.glob("Makefile") ~= "" then
         local execute_program_linux
