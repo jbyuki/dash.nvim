@@ -82,6 +82,9 @@ function execute_program()
   local execute_program_single
   
   execute_program_single = function(exe_file)
+		if not exe_file then
+			return
+		end
     @find_launch_json_vs_cpp
 
     @clear_output_lines
