@@ -5,6 +5,7 @@ if cmakelists_path then
 	@find_tasks_json_cpp_cmake
 	@create_command_line_window
 	@read_vs_environment_variables
+	@execute_cpp_program_on_success
 	@invoke_cmake_windows
 end
 
@@ -89,7 +90,11 @@ handle, err = vim.loop.spawn("cmake",
 		env = env,
 	}, function(code, signal)
     vim.schedule(function()
-			finish(code, signal)
+			if code == 0 then
+				execute_program()
+			else
+				finish(code, signal)
+			end
     end)
 end)
 
