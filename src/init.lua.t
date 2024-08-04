@@ -251,13 +251,19 @@ function M.execute_buf()
   @stop_any_visual_selection_instances
 
   @check_if_tangle_file
+  @check_if_tangle_v2_file
   local filename, ft
   if tangle then
     @get_root_ntangle
+  elseif tangle_v2 then
+    @get_root_ntangle_v2_under_cursor
+    @get_filetype_ntangle_v2
   else
     @get_current_buffer_filename
   end
-  @get_current_buffer_filetype
+  if not tangle_v2 then
+    @get_current_buffer_filetype
+  end
   if not remote then
     M.execute(filename, ft, true)
   else
@@ -356,7 +362,7 @@ stderr:read_stop()
 @check_if_tangle_file+=
 local name = vim.api.nvim_buf_get_name(0)
 local extext = vim.fn.fnamemodify(name, ":e:e")
-local tangle = string.match(extext, ".*%.t")
+local tangle = string.match(extext, ".*%.t$")
 
 @get_root_ntangle+=
 filename = require"ntangle".getRootFilename()

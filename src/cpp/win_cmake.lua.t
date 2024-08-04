@@ -15,7 +15,7 @@ local cmakelists_path
 while true do
 	local parent = vim.fn.fnamemodify(path, ":h")
 	@list_files_in_parent
-	@if_cmakelists_break
+	@if_cmakelists_save_it
 
 	if parent == path then
 		break
@@ -31,16 +31,12 @@ for file in vim.gsplit(vim.fn.glob(parent .. "/*"), "\n") do
   end
 end
 
-@if_cmakelists_break+=
+@if_cmakelists_save_it+=
 for _, file in ipairs(files) do
 	if vim.fn.fnamemodify(file, ":t") == "CMakeLists.txt" then
 		cmakelists_path = file
 		break
 	end
-end
-
-if cmakelists_path then
-	break
 end
 
 @find_tasks_json_cpp_cmake+=

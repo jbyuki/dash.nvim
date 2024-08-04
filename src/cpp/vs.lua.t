@@ -77,6 +77,8 @@ end)
 function execute_program()
   local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build"
   local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
+
+	MAX_LINES = 100000000
 	@remove_exes
 
   local execute_program_single
@@ -169,6 +171,10 @@ exes = vim.tbl_filter(function(path)
 	if filename == "CompilerIdC.exe" then
 		return false
 	elseif filename == "CompilerIdCXX.exe" then
+		return false
+	elseif filename == "CMakeCCompilerId.exe" then
+		return false
+	elseif filename == "CMakeCXXCompilerId.exe" then
 		return false
 	end
 	return true

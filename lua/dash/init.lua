@@ -203,7 +203,7 @@ function M.toggle_breakpoint()
   if debug_running then
     local name = vim.api.nvim_buf_get_name(0)
     local extext = vim.fn.fnamemodify(name, ":e:e")
-    local tangle = string.match(extext, ".*%.t")
+    local tangle = string.match(extext, ".*%.t$")
 
     if tangle then
       local tangled = require"ntangle".get_location_list()
@@ -255,7 +255,7 @@ function M.continue()
         local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
         local name = vim.api.nvim_buf_get_name(0)
         local extext = vim.fn.fnamemodify(name, ":e:e")
-        local tangle = string.match(extext, ".*%.t")
+        local tangle = string.match(extext, ".*%.t$")
 
         if tangle then
           local tangled = require"ntangle".get_location_list()
@@ -389,7 +389,7 @@ end
 function M.debug_buf()
   local name = vim.api.nvim_buf_get_name(0)
   local extext = vim.fn.fnamemodify(name, ":e:e")
-  local tangle = string.match(extext, ".*%.t")
+  local tangle = string.match(extext, ".*%.t$")
 
   local filename, ft
   if tangle then
@@ -484,7 +484,7 @@ function M.debug(filename, ft)
 
     local name = vim.api.nvim_buf_get_name(0)
     local extext = vim.fn.fnamemodify(name, ":e:e")
-    local tangle = string.match(extext, ".*%.t")
+    local tangle = string.match(extext, ".*%.t$")
 
     if tangle then
       local tangled = require"ntangle".get_location_list()
@@ -526,7 +526,7 @@ function M.debug(filename, ft)
           local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
           local name = vim.api.nvim_buf_get_name(0)
           local extext = vim.fn.fnamemodify(name, ":e:e")
-          local tangle = string.match(extext, ".*%.t")
+          local tangle = string.match(extext, ".*%.t$")
 
           if tangle then
             local tangled = require"ntangle".get_location_list()
@@ -579,7 +579,7 @@ function M.step()
         local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})
         local name = vim.api.nvim_buf_get_name(0)
         local extext = vim.fn.fnamemodify(name, ":e:e")
-        local tangle = string.match(extext, ".*%.t")
+        local tangle = string.match(extext, ".*%.t$")
 
         if tangle then
           local tangled = require"ntangle".get_location_list()
@@ -1204,10 +1204,7 @@ function M.execute(filename, ft, open_split, done)
         end 
 
         if output_written then
-          if execute_win and vim.api.nvim_win_is_valid(execute_win) then
-            vim.api.nvim_win_close(execute_win, true)
-            execute_win = nil
-          end
+          -- @close_output_split
           if done then
             done()
           end
@@ -1217,12 +1214,73 @@ function M.execute(filename, ft, open_split, done)
       end)
     end
 
+    local config_path
+
+    local path = vim.fn.expand("%:p")
+    while true do
+    	local parent = vim.fn.fnamemodify(path, ":h")
+
+    	local files = {}
+    	for file in vim.gsplit(vim.fn.glob(parent .. "/*"), "\n") do
+    		if vim.fn.isdirectory(file) == 0 then
+    			table.insert(files, file)
+    		end
+    	end
+
+    	for _, file in ipairs(files) do
+    	  if vim.fn.fnamemodify(file, ":t") == "config.json" then
+    	    config_path = file
+    	    break
+    	  end
+    	end
+
+
+    	if config_path then
+    		break
+    	end
+
+    	if parent == path then
+    		break
+    	end
+    	path = parent 
+    end
+
+    if config_path then
+    	local f = io.open(config_path, "r")
+    	
+      local lines = {}
+      while true do
+        local line = f:read()
+        if not line then
+          break
+        end
+        table.insert(lines, line)
+    	end
+
+      local content = table.concat(lines, "\n")
+      local decoded = vim.json.decode(content)
+
+    	if decoded["main"] then
+    		filename = vim.fn.fnamemodify(config_path, ":h") .. "/" .. decoded["main"]
+    	end
+    end
+
+    if execute_win_height ~= 1 then
+    	if vim.api.nvim_win_is_valid(execute_win) then
+    		vim.fn.win_splitmove(execute_win, 0, { vertical = false, rightbelow = true })
+    		vim.api.nvim_win_set_height(execute_win, 1)
+    		execute_win_height = 1
+    	end
+    end
+
+
+
     MAX_LINES = 100000
     handle, err = vim.loop.spawn("cmd",
       {
         stdio = {stdin, stdout, stderr},
         args = {"/c pdflatex -interaction=nonstopmode " .. filename},
-        cwd = ".",
+        cwd = vim.fn.fnamemodify(filename, ":h")
       }, finish_tex)
 
   elseif ft == "fennel" then
@@ -1260,6 +1318,7 @@ function M.execute(filename, ft, open_split, done)
             vim.api.nvim_win_close(execute_win, true)
             execute_win = nil
           end
+
           if done then
             done()
           end
@@ -1477,10 +1536,6 @@ function M.execute(filename, ft, open_split, done)
 					end
 				end
 
-				if cmakelists_path then
-					break
-				end
-
 
 				if parent == path then
 					break
@@ -1526,11 +1581,17 @@ function M.execute(filename, ft, open_split, done)
 				function execute_program()
 				  local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build"
 				  local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
+
+					MAX_LINES = 100000000
 					exes = vim.tbl_filter(function(path)
 						local filename = vim.fn.fnamemodify(path, ":t")
 						if filename == "CompilerIdC.exe" then
 							return false
 						elseif filename == "CompilerIdCXX.exe" then
+							return false
+						elseif filename == "CMakeCCompilerId.exe" then
+							return false
+						elseif filename == "CMakeCXXCompilerId.exe" then
 							return false
 						end
 						return true
@@ -2481,18 +2542,46 @@ function M.execute_buf()
 
   local name = vim.api.nvim_buf_get_name(0)
   local extext = vim.fn.fnamemodify(name, ":e:e")
-  local tangle = string.match(extext, ".*%.t")
+  local tangle = string.match(extext, ".*%.t$")
+
+  local name = vim.api.nvim_buf_get_name(0)
+  local extext = vim.fn.fnamemodify(name, ":e:e")
+  local tangle_v2 = string.match(extext, ".*%.t2$")
 
   local filename, ft
   if tangle then
     filename = require"ntangle".getRootFilename()
 
+  elseif tangle_v2 then
+    local found, ntangle_inc = pcall(require, "ntangle-inc")
+    assert(found, "ntangle-inc is required")
+
+    local buf = vim.api.nvim_get_current_buf()
+    local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+    local nt_infos = ntangle_inc.TtoNT(buf, row-1)
+
+    for _, nt_info in ipairs(nt_infos) do
+    	local hl = nt_info[1]
+    	local root_section = nt_info[2]
+    	local line = nt_info[3]
+      buf = ntangle_inc.root_to_mirror_buf[root_section]
+
+    	local hl_path = ntangle_inc.hl_to_hl_path[hl]
+    	local parent_path = vim.fs.dirname(hl_path)
+    	filename = vim.fs.joinpath(parent_path, ntangle_inc.ntangle_folder, root_section.name)
+    	break
+    end
+
+    ft = vim.api.nvim_buf_get_option(buf, "ft")
+
   else
     filename = vim.api.nvim_buf_get_name(0)
 
   end
-  ft = vim.api.nvim_buf_get_option(0, "ft")
+  if not tangle_v2 then
+    ft = vim.api.nvim_buf_get_option(0, "ft")
 
+  end
   if not remote then
     M.execute(filename, ft, true)
   else
