@@ -2842,6 +2842,76 @@ function M.close_split_if_last_one()
 
 end
 
+function M.execute_lua_ntangle_v2()
+	local found, ntangle_inc = pcall(require, "ntangle-inc")
+	assert(found)
+
+	local buf = vim.api.nvim_get_current_buf()
+	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+
+	local lnum = row-1
+	local hl_elem = ntangle_inc.Tto_hl_elem(buf, lnum)
+
+	if hl_elem and hl_elem.part then
+		hl_elem = hl_elem.part
+	end
+	local lines = {}
+	if hl_elem then
+		local Tangle = require"vim.tangle"
+		local ll = Tangle.get_ll_from_buf(buf)
+		assert(ll)
+		local hl = Tangle.get_hl_from_ll(ll)
+		assert(hl)
+
+		lines = hl:getlines_all(hl_elem, lines)
+	end
+
+
+	local ntangle_code = table.concat(lines, "\n")
+
+	local f, errmsg = loadstring(ntangle_code)
+	if f then
+		f()
+	else
+		vim.api.nvim_echo({{errmsg, "Error"}}, true, {})
+	end
+end
+
+function M.execute_lua_ntangle_visual_v2()
+  local _,slnum,_,_ = unpack(vim.fn.getpos("'<"))
+  local _,elnum,_,_ = unpack(vim.fn.getpos("'>"))
+  local buf = vim.api.nvim_get_current_buf()
+
+  local found, ntangle_inc = pcall(require, "ntangle-inc")
+  assert(found)
+
+  local all_lines = {}
+  for lnum=slnum-1,elnum-1 do
+  	local hl_elem = ntangle_inc.Tto_hl_elem(buf, lnum)
+
+  	local lines = {}
+  	if hl_elem then
+  		local Tangle = require"vim.tangle"
+  		local ll = Tangle.get_ll_from_buf(buf)
+  		assert(ll)
+  		local hl = Tangle.get_hl_from_ll(ll)
+  		assert(hl)
+
+  		lines = hl:getlines_all(hl_elem, lines)
+  	end
+
+  end
+
+  local ntangle_code = table.concat(all_lines, "\n")
+
+	local f, errmsg = loadstring(ntangle_code)
+	if f then
+		f()
+	else
+		vim.api.nvim_echo({{errmsg, "Error"}}, true, {})
+	end
+end
+
 function M.try_connect(add)
   for i=1,10 do
     local ok, conn
