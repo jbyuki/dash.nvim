@@ -1354,6 +1354,8 @@ function M.execute(filename, ft, open_split, done)
 
         local apk = vim.split(apks, "\n")[1]
 
+        local adb_install_output = {}
+
         local done_install = vim.schedule_wrap(function(code, signal)
           if code == 0 then
             local aapt_output = {}
@@ -1407,9 +1409,14 @@ function M.execute(filename, ft, open_split, done)
                 		cwd = root,
                 	}, finish)
               else
+                vim.schedule(function() print(vim.inspect(aapt_output)) end)
                 finish(code, signal)
               end
             end)
+
+            local adb_install_stdout = vim.loop.new_pipe(false)
+            local adb_install_stderr = vim.loop.new_pipe(false)
+
 
             local aapt_stdout = vim.loop.new_pipe(false)
             local aapt_stderr = vim.loop.new_pipe(false)
@@ -1441,16 +1448,44 @@ function M.execute(filename, ft, open_split, done)
 
 
           else
+            vim.schedule(function() print(vim.inspect(adb_install_output)) end)
             finish(code, signal)
           end
         end)
 
+        local adb_install_stdout = vim.loop.new_pipe(false)
+        local adb_install_stderr = vim.loop.new_pipe(false)
+
+
+        local aapt_stdout = vim.loop.new_pipe(false)
+        local aapt_stderr = vim.loop.new_pipe(false)
+
+
         handle, err = vim.loop.spawn("cmd",
         	{
-        		stdio = {stdin, stdout, stderr},
+        		stdio = {stdin, adb_install_stdout, adb_install_stderr},
         		args = {"/c adb install " .. apk},
         		cwd = root,
         	}, done_install)
+
+        adb_install_stdout:read_start(function(err, data)
+          assert(not err, err)
+          if data then
+            for line in vim.gsplit(data, "\n") do
+              table.insert(adb_install_output , line)
+            end
+          end
+        end)
+
+        adb_install_stderr:read_start(function(err, data)
+          assert(not err, err)
+          if data then
+            for line in vim.gsplit(data, "\n") do
+              table.insert(adb_install_output, line)
+            end
+          end
+        end)
+
 
       else
         local qflist = {} 

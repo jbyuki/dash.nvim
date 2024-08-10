@@ -37,16 +37,48 @@ local done_install = vim.schedule_wrap(function(code, signal)
   if code == 0 then
     @launch_apk
   else
+    vim.schedule(function() print(vim.inspect(adb_install_output)) end)
     finish(code, signal)
   end
 end)
 
+@create_output_pipe
+
 handle, err = vim.loop.spawn("cmd",
 	{
-		stdio = {stdin, stdout, stderr},
+		stdio = {stdin, adb_install_stdout, adb_install_stderr},
 		args = {"/c adb install " .. apk},
 		cwd = root,
 	}, done_install)
+
+@register_adb_output_pipes
+
+@install_apk_and_launch-=
+local adb_install_output = {}
+
+@create_output_pipe+=
+local adb_install_stdout = vim.loop.new_pipe(false)
+local adb_install_stderr = vim.loop.new_pipe(false)
+
+
+@register_adb_output_pipes+=
+adb_install_stdout:read_start(function(err, data)
+  assert(not err, err)
+  if data then
+    for line in vim.gsplit(data, "\n") do
+      table.insert(adb_install_output , line)
+    end
+  end
+end)
+
+adb_install_stderr:read_start(function(err, data)
+  assert(not err, err)
+  if data then
+    for line in vim.gsplit(data, "\n") do
+      table.insert(adb_install_output, line)
+    end
+  end
+end)
 
 @launch_apk+=
 local aapt_output = {}
@@ -56,6 +88,7 @@ local done_aapt = vim.schedule_wrap(function(code, signal)
     @parse_aapt_output
     @launch_activity
   else
+    vim.schedule(function() print(vim.inspect(aapt_output)) end)
     finish(code, signal)
   end
 end)
