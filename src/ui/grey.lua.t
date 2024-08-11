@@ -1,6 +1,8 @@
 ##../dash
-@put_grey_highlight_over+=
+@grey_namespace+=
 local grey_id = vim.api.nvim_create_namespace("")
+
+@put_grey_highlight_over+=
 local linecount = vim.api.nvim_buf_line_count(buf)
 for i=1,linecount  do
   vim.api.nvim_buf_add_highlight(buf, grey_id, "NonText", i-1, 0, -1)

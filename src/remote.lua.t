@@ -43,6 +43,8 @@ function M.execute_remote(filename, ft, open_split)
   @create_split_if_none
   @save_split_size
 
+  @grey_namespace
+
   @restore_split_size_if_quickfix_close
 
   @clear_all_highlight

@@ -108,6 +108,10 @@ local previous_handle
 
 local close_callback_registered = false
 
+local grey_id
+
+local neovim_chan, neovim_proc
+
 local neovim_visual_timer
 
 local global_handle
@@ -707,6 +711,7 @@ function M.execute(filename, ft, open_split, done)
   end
 
   local grey_id = vim.api.nvim_create_namespace("")
+
   local linecount = vim.api.nvim_buf_line_count(buf)
   for i=1,linecount  do
     vim.api.nvim_buf_add_highlight(buf, grey_id, "NonText", i-1, 0, -1)
@@ -2843,14 +2848,139 @@ function M.close_split_if_last_one()
 end
 
 function M.execute_lua_ntangle_v2()
+	local buf
+	local open_split = true
+	if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+	  local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+	  local cur_tab = vim.api.nvim_get_current_tabpage()
+	  if win_tab ~= cur_tab then
+	    vim.api.nvim_win_close(execute_win, true)
+	    execute_win = nil
+	  end
+	end
+
+
+	if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+		grey_id = vim.api.nvim_create_namespace("")
+
+	  if not close_callback_registered then
+	    vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
+	    close_callback_registered = true
+	  end
+
+	  local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
+	  local split
+	  local win_size
+	  local percent = 0.5
+	  -- if width > 2*height then
+	  if true then
+	    split = "vsp"
+	    win_size = math.floor(width*percent)
+	  else
+	    split = "sp"
+	    win_size = math.floor(height*percent)
+	  end
+
+	  vim.api.nvim_command("bo " .. win_size .. split)
+	  execute_win = vim.api.nvim_get_current_win()
+	  vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
+	  vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
+
+	  vim.api.nvim_set_current_win(execute_win)
+	  vim.api.nvim_command("enew")
+	  vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile nospell")
+	  vim.api.nvim_command("setlocal nonumber")
+	  vim.api.nvim_command("setlocal norelativenumber")
+	  execute_buf = vim.api.nvim_win_get_buf(0)
+
+	  local bufname
+	  while true do
+	    bufname = "Out #" .. out_counter
+	    local oldbufnr = vim.fn.bufnr(bufname)
+	    if oldbufnr == -1 then
+	      break
+	    end
+	    out_counter = out_counter + 1
+	  end
+	  vim.api.nvim_buf_set_name(execute_buf, bufname)
+	  out_counter = out_counter + 1
+	  vim.api.nvim_command("wincmd p")
+
+
+		buf = execute_buf
+
+		if neovim_proc then
+			neovim_proc:kill()
+			neovim_chan = nil
+			neovim_proc = nil
+		end
+
+		local tcp_port
+		local temp_tcp = vim.loop.new_tcp()
+		temp_tcp:bind("127.0.0.1", 0)
+		local tcp_port = temp_tcp:getsockname().port
+		temp_tcp:close_reset()
+
+		neovim_proc = vim.system({vim.v.progpath, "--headless", "--listen", ("127.0.0.1:%d"):format(tcp_port)}, { 
+			stdout = vim.schedule_wrap(function(err, data)
+				assert(not err)
+				if data then
+					new_lines = vim.split(data, "\r*\n")
+
+					vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+				end
+			end),
+
+			stderr = vim.schedule_wrap(function(err, data)
+				assert(not err)
+				if data then
+					local new_lines = {}
+					new_lines = vim.split(data, "\r*\n")
+
+					vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+				end
+			end)
+
+		})
+
+		local connect_success = false
+		for i=1,100 do
+			success, neovim_chan = pcall(vim.fn.sockconnect, "tcp", ("127.0.0.1:%d"):format(tcp_port), { rpc = true })
+			if success then
+				connect_success = true
+				break
+			end
+
+			vim.wait(30)
+		end
+
+		assert(connect_success)
+
+		output_lines = {}
+
+		output_all = ""
+
+		vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
+
+
+		local _, info = unpack(vim.fn.rpcrequest(neovim_chan, "nvim_get_api_info"))
+		local header = ("NVIM v%d.%d.%d-%s"):format(info.version.major, info.version.minor, info.version.patch, info.version.build)
+		vim.api.nvim_buf_set_lines(buf, 0, -1, true, {header, ""})
+
+
+	end
+
+	buf = execute_buf
+
+
 	local found, ntangle_inc = pcall(require, "ntangle-inc")
 	assert(found)
 
-	local buf = vim.api.nvim_get_current_buf()
+	local codebuf = vim.api.nvim_get_current_buf()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
 
 	local lnum = row-1
-	local hl_elem = ntangle_inc.Tto_hl_elem(buf, lnum)
+	local hl_elem = ntangle_inc.Tto_hl_elem(codebuf, lnum)
 
 	if hl_elem and hl_elem.part then
 		hl_elem = hl_elem.part
@@ -2858,7 +2988,7 @@ function M.execute_lua_ntangle_v2()
 	local lines = {}
 	if hl_elem then
 		local Tangle = require"vim.tangle"
-		local ll = Tangle.get_ll_from_buf(buf)
+		local ll = Tangle.get_ll_from_buf(codebuf)
 		assert(ll)
 		local hl = Tangle.get_hl_from_ll(ll)
 		assert(hl)
@@ -2869,30 +2999,177 @@ function M.execute_lua_ntangle_v2()
 
 	local ntangle_code = table.concat(lines, "\n")
 
-	local f, errmsg = loadstring(ntangle_code)
-	if f then
-		f()
-	else
-		vim.api.nvim_echo({{errmsg, "Error"}}, true, {})
+
+  vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
+
+  local linecount = vim.api.nvim_buf_line_count(buf)
+  for i=1,linecount  do
+    vim.api.nvim_buf_add_highlight(buf, grey_id, "NonText", i-1, 0, -1)
+  end
+
+
+	local syntax_error = false
+	local good, err = loadstring(ntangle_code)
+	if not good then
+		vim.api.nvim_buf_set_lines(buf, -1, -1, true, { err })
+		syntax_error = true
 	end
+
+	if not syntax_error then
+		ntangle_code = ([[
+			local success, err = pcall(function()
+				%s
+			end)
+			if not success and err then
+				io.write(err)
+			end
+		]]):format(ntangle_code)
+		vim.fn.rpcnotify(neovim_chan, "nvim_exec_lua", ntangle_code, {})
+	end
+
 end
 
 function M.execute_lua_ntangle_visual_v2()
+	local buf
+	local open_split = true
+	if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+	  local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+	  local cur_tab = vim.api.nvim_get_current_tabpage()
+	  if win_tab ~= cur_tab then
+	    vim.api.nvim_win_close(execute_win, true)
+	    execute_win = nil
+	  end
+	end
+
+
+	if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+		grey_id = vim.api.nvim_create_namespace("")
+
+	  if not close_callback_registered then
+	    vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
+	    close_callback_registered = true
+	  end
+
+	  local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
+	  local split
+	  local win_size
+	  local percent = 0.5
+	  -- if width > 2*height then
+	  if true then
+	    split = "vsp"
+	    win_size = math.floor(width*percent)
+	  else
+	    split = "sp"
+	    win_size = math.floor(height*percent)
+	  end
+
+	  vim.api.nvim_command("bo " .. win_size .. split)
+	  execute_win = vim.api.nvim_get_current_win()
+	  vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
+	  vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)
+
+	  vim.api.nvim_set_current_win(execute_win)
+	  vim.api.nvim_command("enew")
+	  vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile nospell")
+	  vim.api.nvim_command("setlocal nonumber")
+	  vim.api.nvim_command("setlocal norelativenumber")
+	  execute_buf = vim.api.nvim_win_get_buf(0)
+
+	  local bufname
+	  while true do
+	    bufname = "Out #" .. out_counter
+	    local oldbufnr = vim.fn.bufnr(bufname)
+	    if oldbufnr == -1 then
+	      break
+	    end
+	    out_counter = out_counter + 1
+	  end
+	  vim.api.nvim_buf_set_name(execute_buf, bufname)
+	  out_counter = out_counter + 1
+	  vim.api.nvim_command("wincmd p")
+
+
+		buf = execute_buf
+
+		if neovim_proc then
+			neovim_proc:kill()
+			neovim_chan = nil
+			neovim_proc = nil
+		end
+
+		local tcp_port
+		local temp_tcp = vim.loop.new_tcp()
+		temp_tcp:bind("127.0.0.1", 0)
+		local tcp_port = temp_tcp:getsockname().port
+		temp_tcp:close_reset()
+
+		neovim_proc = vim.system({vim.v.progpath, "--headless", "--listen", ("127.0.0.1:%d"):format(tcp_port)}, { 
+			stdout = vim.schedule_wrap(function(err, data)
+				assert(not err)
+				if data then
+					new_lines = vim.split(data, "\r*\n")
+
+					vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+				end
+			end),
+
+			stderr = vim.schedule_wrap(function(err, data)
+				assert(not err)
+				if data then
+					local new_lines = {}
+					new_lines = vim.split(data, "\r*\n")
+
+					vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+				end
+			end)
+
+		})
+
+		local connect_success = false
+		for i=1,100 do
+			success, neovim_chan = pcall(vim.fn.sockconnect, "tcp", ("127.0.0.1:%d"):format(tcp_port), { rpc = true })
+			if success then
+				connect_success = true
+				break
+			end
+
+			vim.wait(30)
+		end
+
+		assert(connect_success)
+
+		output_lines = {}
+
+		output_all = ""
+
+		vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
+
+
+		local _, info = unpack(vim.fn.rpcrequest(neovim_chan, "nvim_get_api_info"))
+		local header = ("NVIM v%d.%d.%d-%s"):format(info.version.major, info.version.minor, info.version.patch, info.version.build)
+		vim.api.nvim_buf_set_lines(buf, 0, -1, true, {header, ""})
+
+
+	end
+
+	buf = execute_buf
+
+
   local _,slnum,_,_ = unpack(vim.fn.getpos("'<"))
   local _,elnum,_,_ = unpack(vim.fn.getpos("'>"))
-  local buf = vim.api.nvim_get_current_buf()
+  local codebuf = vim.api.nvim_get_current_buf()
 
   local found, ntangle_inc = pcall(require, "ntangle-inc")
   assert(found)
 
   local all_lines = {}
   for lnum=slnum-1,elnum-1 do
-  	local hl_elem = ntangle_inc.Tto_hl_elem(buf, lnum)
+  	local hl_elem = ntangle_inc.Tto_hl_elem(codebuf, lnum)
 
   	local lines = {}
   	if hl_elem then
   		local Tangle = require"vim.tangle"
-  		local ll = Tangle.get_ll_from_buf(buf)
+  		local ll = Tangle.get_ll_from_buf(codebuf)
   		assert(ll)
   		local hl = Tangle.get_hl_from_ll(ll)
   		assert(hl)
@@ -2900,16 +3177,43 @@ function M.execute_lua_ntangle_visual_v2()
   		lines = hl:getlines_all(hl_elem, lines)
   	end
 
+  	for _, line in ipairs(lines) do
+  		table.insert(all_lines, line)
+  	end
+
   end
 
   local ntangle_code = table.concat(all_lines, "\n")
 
-	local f, errmsg = loadstring(ntangle_code)
-	if f then
-		f()
-	else
-		vim.api.nvim_echo({{errmsg, "Error"}}, true, {})
+
+
+  vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
+
+  local linecount = vim.api.nvim_buf_line_count(buf)
+  for i=1,linecount  do
+    vim.api.nvim_buf_add_highlight(buf, grey_id, "NonText", i-1, 0, -1)
+  end
+
+
+	local syntax_error = false
+	local good, err = loadstring(ntangle_code)
+	if not good then
+		vim.api.nvim_buf_set_lines(buf, -1, -1, true, { err })
+		syntax_error = true
 	end
+
+	if not syntax_error then
+		ntangle_code = ([[
+			local success, err = pcall(function()
+				%s
+			end)
+			if not success and err then
+				io.write(err)
+			end
+		]]):format(ntangle_code)
+		vim.fn.rpcnotify(neovim_chan, "nvim_exec_lua", ntangle_code, {})
+	end
+
 end
 
 function M.try_connect(add)
@@ -3012,6 +3316,9 @@ function M.execute_remote(filename, ft, open_split)
   local execute_win_height = vim.api.nvim_win_get_height(execute_win)
 
 
+  local grey_id = vim.api.nvim_create_namespace("")
+
+
   vim.api.nvim_win_set_height(execute_win, execute_win_height)
 
 
@@ -3021,7 +3328,6 @@ function M.execute_remote(filename, ft, open_split)
     hl_ns = vim.api.nvim_create_namespace("")
   end
 
-  local grey_id = vim.api.nvim_create_namespace("")
   local linecount = vim.api.nvim_buf_line_count(buf)
   for i=1,linecount  do
     vim.api.nvim_buf_add_highlight(buf, grey_id, "NonText", i-1, 0, -1)

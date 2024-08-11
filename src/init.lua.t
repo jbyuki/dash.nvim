@@ -20,6 +20,7 @@ function M.execute(filename, ft, open_split, done)
 
   @create_pipes
   @clear_all_highlight
+  @grey_namespace
   @put_grey_highlight_over
 
   @set_as_not_finished
