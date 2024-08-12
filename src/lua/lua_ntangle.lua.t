@@ -130,6 +130,8 @@ stdout = vim.schedule_wrap(function(err, data)
 	if data then
 		@append_data_to_output_lines
 		vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+
+		@scroll_buffer_to_last_line
 	end
 end),
 
@@ -139,6 +141,7 @@ stderr = vim.schedule_wrap(function(err, data)
 		local new_lines = {}
 		@append_data_to_output_lines
 		vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+		@scroll_buffer_to_last_line
 	end
 end)
 

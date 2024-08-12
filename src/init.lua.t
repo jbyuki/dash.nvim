@@ -244,7 +244,7 @@ end
 @scroll_buffer_to_last_line+=
 vim.schedule(function()
 	local num_lines = vim.api.nvim_buf_line_count(buf)
-	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
 end)
 
 @implement+=

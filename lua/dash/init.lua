@@ -919,7 +919,7 @@ function M.execute(filename, ft, open_split, done)
 
             vim.schedule(function()
             	local num_lines = vim.api.nvim_buf_line_count(buf)
-            	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
             end)
 
 
@@ -958,7 +958,7 @@ function M.execute(filename, ft, open_split, done)
 
             vim.schedule(function()
             	local num_lines = vim.api.nvim_buf_line_count(buf)
-            	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
             end)
 
 
@@ -1074,7 +1074,7 @@ function M.execute(filename, ft, open_split, done)
 
             vim.schedule(function()
             	local num_lines = vim.api.nvim_buf_line_count(buf)
-            	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
             end)
 
 
@@ -1113,7 +1113,7 @@ function M.execute(filename, ft, open_split, done)
 
             vim.schedule(function()
             	local num_lines = vim.api.nvim_buf_line_count(buf)
-            	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+            	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
             end)
 
 
@@ -1703,7 +1703,7 @@ function M.execute(filename, ft, open_split, done)
 
 				          vim.schedule(function()
 				          	local num_lines = vim.api.nvim_buf_line_count(buf)
-				          	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+				          	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
 				          end)
 
 
@@ -1742,7 +1742,7 @@ function M.execute(filename, ft, open_split, done)
 
 				          vim.schedule(function()
 				          	local num_lines = vim.api.nvim_buf_line_count(buf)
-				          	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+				          	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
 				          end)
 
 
@@ -1924,7 +1924,7 @@ function M.execute(filename, ft, open_split, done)
 
                 vim.schedule(function()
                 	local num_lines = vim.api.nvim_buf_line_count(buf)
-                	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
                 end)
 
 
@@ -1963,7 +1963,7 @@ function M.execute(filename, ft, open_split, done)
 
                 vim.schedule(function()
                 	local num_lines = vim.api.nvim_buf_line_count(buf)
-                	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
                 end)
 
 
@@ -2105,7 +2105,7 @@ function M.execute(filename, ft, open_split, done)
 
                 vim.schedule(function()
                 	local num_lines = vim.api.nvim_buf_line_count(buf)
-                	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
                 end)
 
 
@@ -2144,7 +2144,7 @@ function M.execute(filename, ft, open_split, done)
 
                 vim.schedule(function()
                 	local num_lines = vim.api.nvim_buf_line_count(buf)
-                	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+                	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
                 end)
 
 
@@ -2443,7 +2443,7 @@ function M.execute(filename, ft, open_split, done)
 
         vim.schedule(function()
         	local num_lines = vim.api.nvim_buf_line_count(buf)
-        	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+        	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
         end)
 
 
@@ -2482,7 +2482,7 @@ function M.execute(filename, ft, open_split, done)
 
         vim.schedule(function()
         	local num_lines = vim.api.nvim_buf_line_count(buf)
-        	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines - 1, 1), 0 })
+        	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
         end)
 
 
@@ -2928,6 +2928,12 @@ function M.execute_lua_ntangle_v2()
 					new_lines = vim.split(data, "\r*\n")
 
 					vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+
+					vim.schedule(function()
+						local num_lines = vim.api.nvim_buf_line_count(buf)
+						vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
+					end)
+
 				end
 			end),
 
@@ -2938,6 +2944,11 @@ function M.execute_lua_ntangle_v2()
 					new_lines = vim.split(data, "\r*\n")
 
 					vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+					vim.schedule(function()
+						local num_lines = vim.api.nvim_buf_line_count(buf)
+						vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
+					end)
+
 				end
 			end)
 
@@ -3110,6 +3121,12 @@ function M.execute_lua_ntangle_visual_v2()
 					new_lines = vim.split(data, "\r*\n")
 
 					vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+
+					vim.schedule(function()
+						local num_lines = vim.api.nvim_buf_line_count(buf)
+						vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
+					end)
+
 				end
 			end),
 
@@ -3120,6 +3137,11 @@ function M.execute_lua_ntangle_visual_v2()
 					new_lines = vim.split(data, "\r*\n")
 
 					vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+					vim.schedule(function()
+						local num_lines = vim.api.nvim_buf_line_count(buf)
+						vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
+					end)
+
 				end
 			end)
 
