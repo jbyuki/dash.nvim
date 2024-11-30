@@ -104,7 +104,7 @@ end
 if execute_win_height ~= 1 then
 	if vim.api.nvim_win_is_valid(execute_win) then
 		vim.fn.win_splitmove(execute_win, 0, { vertical = false, rightbelow = true })
-		vim.api.nvim_win_set_height(execute_win, 1)
+		vim.api.nvim_win_set_height(execute_win, 2)
 		execute_win_height = 1
 	end
 end

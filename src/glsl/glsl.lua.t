@@ -16,8 +16,7 @@ handle, err = vim.loop.spawn("cmd",
 	}, finish_glsl)
 
 @find_vulkan_version+=
-local version = vim.fn.glob("C:\\VulkanSDK\\*")
-local bin = version .. "\\Bin\\glslc.exe"
+local bin = vim.fs.joinpath(vim.g.glslc_dir, "glslc.exe")
 
 @callback_for_glsl_finish+=
 local finish_glsl = function(code, signal)
