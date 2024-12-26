@@ -2606,7 +2606,8 @@ function M.execute_buf()
       buf = ntangle_inc.root_to_mirror_buf[root_section]
 
     	local hl_path = ntangle_inc.hl_to_hl_path[hl]
-    	local parent_path = vim.fs.dirname(hl_path)
+    	-- local parent_path = vim.fs.dirname(hl_path)
+    	local parent_path = hl_path
     	filename = vim.fs.joinpath(parent_path, ntangle_inc.ntangle_folder, root_section.name)
     	break
     end
