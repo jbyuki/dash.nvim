@@ -2604,11 +2604,14 @@ function M.execute_buf()
     	local root_section = nt_info[2]
     	local line = nt_info[3]
       buf = ntangle_inc.root_to_mirror_buf[root_section]
-
     	local hl_path = ntangle_inc.hl_to_hl_path[hl]
-    	-- local parent_path = vim.fs.dirname(hl_path)
-    	local parent_path = hl_path
-    	filename = vim.fs.joinpath(parent_path, ntangle_inc.ntangle_folder, root_section.name)
+
+    	local parent_path = vim.fs.dirname(hl_path)
+    	if root_section.name:find("/") or root_section.name:find("\\") then
+    		filename = vim.fs.joinpath(parent_path, root_section.name)
+    	else
+    		filename = vim.fs.joinpath(parent_path, ntangle_inc.ntangle_folder, root_section.name)
+    	end
     	break
     end
 
