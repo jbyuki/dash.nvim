@@ -1304,6 +1304,14 @@ function M.execute(filename, ft, open_split, done)
     		cwd = ".",
     	}, finish)
 
+  elseif ft == "typescript" then
+    handle, err = vim.loop.spawn("cmd",
+    	{
+    		stdio = {stdin, stdout, stderr},
+    		args = {"/c deno " .. filename},
+    		cwd = ".",
+    	}, finish)
+
   elseif ft == "vim" then
     handle, err = vim.loop.spawn("nvim",
     	{
@@ -2811,6 +2819,15 @@ function M.execute_visual()
 
     M.execute(fname, ft, true)
   elseif ft == "javascript" then
+    local fname = vim.fn.tempname()
+    local f = io.open(fname, "w")
+    for _, line in ipairs(lines) do
+      f:write(line .. "\n")
+    end
+    f:close()
+
+    M.execute(fname, ft, true)
+  elseif ft == "typescript" then
     local fname = vim.fn.tempname()
     local f = io.open(fname, "w")
     for _, line in ipairs(lines) do
