@@ -17,6 +17,8 @@ Supported
 | _Python_ | :seedling: | :seedling: | | |
 | _Fennel_ | :seedling: | :seedling: | | |
 | _nodejs_ | :seedling: | :seedling: | | |
+| _Typescript / Deno_ | :seedling: | :seedling: | | |
+| _Ruby_ | :seedling: | :seedling: | | |
 | _Vimscript_ | :seedling: || :seedling: | |
 | _C++ / Visual Studio_ | :seedling: || :seedling: | |
 | Matlab | || | |

@@ -61,6 +61,8 @@ function M.execute(filename, ft, open_split, done)
     @spawn_nodejs_instance
   elseif ft == "typescript" then
     @spawn_deno_instance
+  elseif ft == "ruby" then
+    @spawn_ruby_instance
   elseif ft == "vim" then
     @spawn_neovim_process_for_vimscript
   elseif ft == "glsl" then
@@ -415,7 +417,9 @@ function M.execute_visual()
   elseif ft == "javascript" then
     @execute_visual_nodejs
   elseif ft == "typescript" then
-    @execute_visual_nodejs
+    @execute_visual_deno
+  elseif ft == "ruby" then
+    @execute_visual_ruby
   end
 end
 
