@@ -735,59 +735,8 @@ function M.execute(filename, ft, open_split, done)
 
       end
 
-      local new_lines = {}
-
-      if previous and #output_lines < 1000 then 
-        local best = {}
-        local best = {}
-
-        local A = previous
-        local B = output_lines
-
-        best[0] = {}
-        for j=0,#B do
-          best[0][j] = {}
-        end
-
-        for i=1,#A do
-          best[i] = {}
-          best[i][0] = {}
-          for j=1,#B do
-            if B[j] ~= A[i] then
-              if #best[i-1][j] > #best[i][j-1] then
-                best[i][j] = best[i-1][j]
-              else
-                best[i][j] = best[i][j-1]
-              end
-            else
-              best[i][j] = vim.deepcopy(best[i-1][j-1])
-              table.insert(best[i][j], j)
-            end
-          end
-        end
-
-        local lcs = best[#previous][#output_lines]
-
-        local k = 1
-        for i=1,#output_lines do
-          if k <= #lcs and lcs[k] == i then
-            k = k + 1
-          else
-            table.insert(new_lines, i)
-          end
-        end
-
-      else
-        for i=1,#output_lines do
-          table.insert(new_lines, i)
-        end
-
-      end
-
-      for _,lnum in ipairs(new_lines) do
-        vim.api.nvim_buf_add_highlight(buf, hl_ns, "Search", lnum-1, 0, -1)
-      end
-
+      -- @compare_with_previous_output
+      -- @higlight_differences
       previous = output_lines
 
 
@@ -2622,7 +2571,7 @@ function M.execute_buf()
       buf = ntangle_inc.root_to_mirror_buf[root_section]
     	local hl_path = ntangle_inc.hl_to_hl_path[hl]
 
-    	local parent_path = vim.fs.dirname(hl_path)
+    	local parent_path = hl_path
     	if root_section.name:find("/") or root_section.name:find("\\") then
     		filename = vim.fs.joinpath(parent_path, root_section.name)
     	else

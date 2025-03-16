@@ -23,7 +23,7 @@ for _, nt_info in ipairs(nt_infos) do
   buf = ntangle_inc.root_to_mirror_buf[root_section]
 	local hl_path = ntangle_inc.hl_to_hl_path[hl]
 
-	local parent_path = vim.fs.dirname(hl_path)
+	local parent_path = hl_path
 	if root_section.name:find("/") or root_section.name:find("\\") then
 		filename = vim.fs.joinpath(parent_path, root_section.name)
 	else

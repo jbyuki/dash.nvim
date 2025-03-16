@@ -29,8 +29,8 @@ function M.execute(filename, ft, open_split, done)
       @check_if_buffer_is_valid
       @if_no_output_clear_grey_highlight
       @if_no_output_clear_console
-      @compare_with_previous_output
-      @higlight_differences
+      -- @compare_with_previous_output
+      -- @higlight_differences
       @save_current_output
 
       @set_as_finished
