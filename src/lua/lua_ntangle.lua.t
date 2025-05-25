@@ -198,10 +198,15 @@ end
 
 @wrap_code_into_error_handler+=
 ntangle_code = ([[
-	local success, err = pcall(function()
-		%s
-	end)
-	if not success and err then
-		io.write(err)
+	local succ, osv = pcall(require, "osv")
+	if not succ or not osv.is_attached() then
+		local success, err = pcall(function()
+			%s
+		end)
+		if not success and err then
+			io.write(err)
+		end
+	else
+			%s
 	end
-]]):format(ntangle_code)
+]]):format(ntangle_code, ntangle_code)
