@@ -1520,7 +1520,7 @@ function M.execute(filename, ft, open_split, done)
           cwd = ".",
         }, finish)
     end
-  elseif ft == "cpp" or ft == "c" then
+  elseif ft == "cpp" or ft == "c" or ft == "cuda" then
     if vim.fn.has("win32") == 1 then
 			local path = vim.fn.expand("%:p")
 			local cmakelists_path

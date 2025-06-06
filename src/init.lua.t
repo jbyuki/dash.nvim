@@ -78,7 +78,7 @@ function M.execute(filename, ft, open_split, done)
     if vim.fn.has("unix") == 1 then
       @execute_verilator
     end
-  elseif ft == "cpp" or ft == "c" then
+  elseif ft == "cpp" or ft == "c" or ft == "cuda" then
     if vim.fn.has("win32") == 1 then
 			@execute_cmake_win
       -- @try_find_vs_solution
