@@ -12,7 +12,7 @@ end
 @find_parent_cmakelists+=
 local path = vim.fn.expand("%:p")
 local cmakelists_path
-while true do
+while not cmakelists_path do
 	local parent = vim.fn.fnamemodify(path, ":h")
 	@list_files_in_parent
 	@if_cmakelists_save_it

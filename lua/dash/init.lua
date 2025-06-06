@@ -1524,7 +1524,7 @@ function M.execute(filename, ft, open_split, done)
     if vim.fn.has("win32") == 1 then
 			local path = vim.fn.expand("%:p")
 			local cmakelists_path
-			while true do
+			while not cmakelists_path do
 				local parent = vim.fn.fnamemodify(path, ":h")
 				local files = {}
 				for file in vim.gsplit(vim.fn.glob(parent .. "/*"), "\n") do
