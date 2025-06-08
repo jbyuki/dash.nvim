@@ -112,6 +112,8 @@ local grey_id
 
 local neovim_chan, neovim_proc
 
+local lua_temp_file
+
 local neovim_visual_timer
 
 local global_handle
@@ -3026,7 +3028,15 @@ function M.execute_lua_ntangle_v2()
 					%s
 			end
 		]]):format(ntangle_code, ntangle_code)
-		vim.fn.rpcnotify(neovim_chan, "nvim_exec_lua", ntangle_code, {})
+		if not lua_temp_file then
+			lua_temp_file = vim.fn.tempname()
+		end
+
+		local f = io.open(lua_temp_file, "w")
+		f:write(ntangle_code)
+		f:close()
+
+		vim.fn.rpcnotify(neovim_chan, "nvim_exec", "luafile " .. lua_temp_file, false)
 	end
 
 end
@@ -3229,7 +3239,15 @@ function M.execute_lua_ntangle_visual_v2()
 					%s
 			end
 		]]):format(ntangle_code, ntangle_code)
-		vim.fn.rpcnotify(neovim_chan, "nvim_exec_lua", ntangle_code, {})
+		if not lua_temp_file then
+			lua_temp_file = vim.fn.tempname()
+		end
+
+		local f = io.open(lua_temp_file, "w")
+		f:write(ntangle_code)
+		f:close()
+
+		vim.fn.rpcnotify(neovim_chan, "nvim_exec", "luafile " .. lua_temp_file, false)
 	end
 
 end

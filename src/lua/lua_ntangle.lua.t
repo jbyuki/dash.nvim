@@ -145,13 +145,28 @@ stderr = vim.schedule_wrap(function(err, data)
 	end
 end)
 
+@script_variables+=
+local lua_temp_file
+
 @execute_lua_code_in_remote+=
 local syntax_error = false
 @check_syntax_error
 if not syntax_error then
 	@wrap_code_into_error_handler
-	vim.fn.rpcnotify(neovim_chan, "nvim_exec_lua", ntangle_code, {})
+	@if_no_temp_file_generate_name
+	@write_code_to_temp_file
+	vim.fn.rpcnotify(neovim_chan, "nvim_exec", "luafile " .. lua_temp_file, false)
 end
+
+@if_no_temp_file_generate_name+=
+if not lua_temp_file then
+	lua_temp_file = vim.fn.tempname()
+end
+
+@write_code_to_temp_file+=
+local f = io.open(lua_temp_file, "w")
+f:write(ntangle_code)
+f:close()
 
 @append_data_to_output_lines+=
 new_lines = vim.split(data, "\r*\n")
