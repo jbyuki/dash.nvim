@@ -1,0 +1,5 @@
+;;; dash
+;; implement
+function M.stop()
+  ; close previous handle
+end

@@ -1,0 +1,12 @@
+;;; ../dash
+;; spawn ruby instance
+handle, err = vim.loop.spawn("cmd",
+	{
+		stdio = {stdin, stdout, stderr},
+		args = {"/c ruby " .. filename},
+		cwd = ".",
+	}, finish)
+
+;; execute visual ruby
+; write to temporary file
+M.execute(fname, ft, true)

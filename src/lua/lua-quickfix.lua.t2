@@ -1,0 +1,33 @@
+;;; ../dash
+;; parse error for quickfix
+if ft == "lua" then
+  for line in vim.gsplit(data, "\r*\n") do
+    if string.match(line, "^E%d+: Error while creating lua chunk: ") then
+      ; parse all informations from line
+      ; set error in quickfix window
+    end
+  end
+end
+
+;; parse all informations from line
+local errnum, fn, lnum, errmsg = string.match(line, "^E(%d+): Error while creating lua chunk: (.-%.lua):(%d+): (.*)")
+
+
+;; set error in quickfix window
+vim.fn.setqflist({{
+  filename = fn, 
+  lnum = lnum, 
+  nr = errnum,
+  text = errmsg,
+  type = 'E'
+}})
+open_quickfix = true
+
+;; open quickfix
+if open_quickfix then
+  -- vim.api.nvim_command("copen")
+end
+
+;; close quickfix if open
+vim.api.nvim_command("cclose")
+vim.fn.setqflist({})

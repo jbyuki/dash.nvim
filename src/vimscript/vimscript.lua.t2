@@ -1,0 +1,8 @@
+;;; ../dash
+;; spawn neovim process for vimscript
+handle, err = vim.loop.spawn("nvim",
+	{
+		stdio = {stdin, stdout, stderr},
+		args = {"--headless", "-u", "NONE", "-c", "source " .. filename, "-c", "exit"},
+		cwd = ".",
+	}, finish)

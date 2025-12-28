@@ -1,0 +1,39 @@
+;;; ../dash
+;; try find build bat
+local fn = vim.api.nvim_buf_get_name(0)
+fn = vim.fn.fnamemodify(fn, ":p")
+local pardir = vim.fn.fnamemodify(fn, ":h")
+local buildbat = vim.fn.glob(pardir .. "/build.bat") ~= ""
+
+;; execute build bat
+handle, err = vim.loop.spawn("cmd",
+	{
+		stdio = {stdin, stdout, stderr},
+		args = {"/k", pardir .. "/build.bat" },
+		cwd = ".",
+	}, function(code, signal)
+    vim.schedule(function()
+      local exe_file = vim.fn.glob(pardir .. "/bin/*.exe")
+      if code == 0 and exe_file ~= "" then
+
+        execute_program_bat(exe_file)
+      else
+        finish(code, signal)
+      end
+    end)
+  end)
+
+;; execute exe if exists build bat
+function execute_program_bat(exe_file)
+  ; clear output lines
+  ; clear output window
+  ; create pipes
+  handle, err = vim.loop.spawn(exe_file,
+    {
+      stdio = {stdin, stdout, stderr},
+      cwd = ".",
+    }, finish)
+
+  ; if spawn error print
+  ; register pipe callback neovim
+end

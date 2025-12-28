@@ -1,0 +1,10 @@
+;;; ../dash
+;; save split size
+local execute_win_height = vim.api.nvim_win_get_height(execute_win)
+
+;; restore split size if quickfix close
+vim.api.nvim_win_set_height(execute_win, execute_win_height)
+
+;; set window dimension fix
+vim.api.nvim_win_set_option(execute_win, "winfixheight", true)
+vim.api.nvim_win_set_option(execute_win, "winfixwidth", true)

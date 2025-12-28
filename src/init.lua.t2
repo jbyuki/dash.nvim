@@ -1,0 +1,507 @@
+;;; dash
+:: ../lua/dash/init.lua
+; script variables
+; add tests
+; define signs
+local M = {}
+; implement
+
+return M
+
+;; implement
+function M.execute(filename, ft, open_split, done)
+  ; close previous handle
+  local buf
+  ; close split if different tabpage
+  ; create split if none
+  ; save split size
+  -- @close_quickfix_if_open
+  ; restore split size if quickfix close
+
+  ; create pipes
+  ; clear all highlight
+  ; grey namespace
+  ; put grey highlight over
+
+  ; set as not finished
+  local finish = function(code, signal) 
+		vim.schedule(function()
+      ; check if buffer is valid
+      ; if no output clear grey highlight
+      ; if no output clear console
+      -- @compare_with_previous_output
+      -- @higlight_differences
+      ; save current output
+
+      ; set as finished
+      if done then
+        done()
+      end
+		end)
+  end
+
+  local handle, err
+  if ft == "lua" then
+    ; spawn neovim process
+  elseif ft == "python" then
+    ; spawn python instance
+  elseif ft == "asm" then
+    local link_program
+    local execute_program
+    ; spawn nasm instance
+    ; link nasm program on success
+    ; execute nasm program on success
+  elseif ft == "go" then
+    ; spawn go instance
+  elseif ft == "dart" then
+    ; spawn dart instance
+  elseif ft == "tex" or ft == "plaintex" then
+    ; spawn tex instance
+  elseif ft == "fennel" then
+    ; spawn fennel instance
+  elseif ft == "javascript" then
+    ; spawn nodejs instance
+  elseif ft == "typescript" then
+    ; spawn deno instance
+  elseif ft == "ruby" then
+    ; spawn ruby instance
+  elseif ft == "vim" then
+    ; spawn neovim process for vimscript
+  elseif ft == "glsl" then
+    ; spawn glslc for glsl
+  elseif ft == "kotlin" then
+    ; find android project root
+    ; invoke gradle to build and install
+  elseif ft == "sh" then
+    if vim.fn.has("unix") == 1 then
+      ; execute bash script
+    end
+  elseif ft == "verilog" or ft == "systemverilog" then
+    if vim.fn.has("unix") == 1 then
+      ; execute verilator
+    end
+  elseif ft == "cpp" or ft == "c" or ft == "cuda" then
+    if vim.fn.has("win32") == 1 then
+			; execute cmake win
+      -- @try_find_vs_solution
+      -- if vs then
+        -- local execute_program
+        -- @spawn_vs_compilation
+        -- @execute_cpp_program_on_success
+      -- else
+        -- @try_find_build_bat
+        -- if buildbat then
+          -- local execute_program_bat
+          -- @execute_build_bat
+          -- @execute_exe_if_exists_build_bat
+        -- end
+      -- end
+    else 
+      if vim.fn.glob("Makefile") ~= "" then
+        ; execute make build
+      else
+        ; execute cmake build
+      end
+    end
+  elseif ft == "bf" then
+    vim.schedule(function()
+      ; close split
+      ; execute bf program
+    end)
+    return
+  end
+  ; if spawn error print
+  ; set global handle
+  ; register pipe callback neovim
+  if handle then
+    ; clear output lines
+    ; save handle globally
+  end
+end
+
+;; create pipes
+local stdin = vim.loop.new_pipe(false)
+local stdout = vim.loop.new_pipe(false)
+local stderr = vim.loop.new_pipe(false)
+
+;; spawn neovim process
+-- After a lot of sweet and tears, I've found
+-- that neovim only outputs to stdout on exit
+-- that's why the -c exit is crucial,
+-- otherwise nothing is captured.
+handle, err = vim.loop.spawn("nvim",
+	{
+		stdio = {stdin, stdout, stderr},
+		args = {"--headless", "-c", "luafile " .. filename, "-c", "exit"},
+		cwd = ".",
+	}, finish)
+
+;; if spawn error print
+assert(handle, err)
+
+;; script variables
+local output_lines = {}
+
+;; clear output lines
+output_lines = {}
+
+;; register pipe callback neovim
+stdout:read_start(function(err, data)
+  vim.schedule(function()
+    assert(not err, err)
+    if data then
+      ; append output to buf
+    end
+  end)
+end)
+
+stderr:read_start(function(err, data)
+  vim.schedule(function()
+    assert(not err, err)
+    if data then
+      local open_quickfix = false
+      ; append output to buf
+      ; parse error for quickfix
+      ; open quickfix
+    end
+  end)
+end)
+
+;; script variables
+local execute_win, execute_buf
+
+;; create split if none
+if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+  ; register close callback if first time
+  ; create new window for execution
+end
+
+if open_split then
+  ; create new buffer into window
+  ; set previous content in the meantime
+else
+  ; create new scratch buffer
+end
+buf = execute_buf
+
+;; create new window for execution
+local width, height = vim.api.nvim_win_get_width(0), vim.api.nvim_win_get_height(0)
+local split
+local win_size
+local percent = 0.5
+-- if width > 2*height then
+if true then
+  split = "vsp"
+  win_size = math.floor(width*percent)
+else
+  split = "sp"
+  win_size = math.floor(height*percent)
+end
+
+vim.api.nvim_command("bo " .. win_size .. split)
+execute_win = vim.api.nvim_get_current_win()
+; set window dimension fix
+
+;; create new buffer into window
+vim.api.nvim_set_current_win(execute_win)
+vim.api.nvim_command("enew")
+vim.api.nvim_command("setlocal buftype=nofile bufhidden=wipe nobuflisted nolist noswapfile nospell")
+vim.api.nvim_command("setlocal nonumber")
+vim.api.nvim_command("setlocal norelativenumber")
+execute_buf = vim.api.nvim_win_get_buf(0)
+; rename output buffer
+vim.api.nvim_command("wincmd p")
+
+;; create new scratch buffer
+execute_buf = vim.api.nvim_create_buf(false, true)
+
+;; clear output window
+vim.api.nvim_buf_set_lines(buf, 0, -1, true, {})
+
+;; script variables
+local MAX_LINES = 10000
+local output_all = ""
+
+;; clear output lines
+output_all = ""
+
+;; append output to buf
+if #output_lines == 0 then
+  ; clear output window
+  ; clear grey highlight
+end
+
+output_all = output_all .. data
+; clear output window
+output_lines = vim.split(output_all, "\r*\n")
+vim.api.nvim_buf_set_lines(buf, 0, -1, true, output_lines)
+
+; scroll buffer to last line
+
+if #output_lines >= MAX_LINES then
+	; abort script
+	if handle then
+		handle:kill()
+		handle = nil
+	end
+	error("dash.nvim: too many lines. Abort script")
+end
+
+;; scroll buffer to last line
+vim.schedule(function()
+	local num_lines = vim.api.nvim_buf_line_count(buf)
+	vim.api.nvim_win_set_cursor(execute_win, { math.max(num_lines, 1), 0 })
+end)
+
+;; implement
+function M.execute_buf()
+  ; stop any visual selection instances
+
+  ; check if tangle file
+  ; check if tangle v2 file
+  local filename, ft
+  if tangle then
+    ; get root ntangle
+  elseif tangle_v2 then
+    ; get root ntangle v2 under cursor
+    ; get filetype ntangle v2
+  else
+    ; get current buffer filename
+  end
+  if not tangle_v2 then
+    ; get current buffer filetype
+  end
+  if not remote then
+    M.execute(filename, ft, true)
+  else
+    M.execute_remote(filename, ft, true)
+  end
+end
+
+;; get current buffer filename
+filename = vim.api.nvim_buf_get_name(0)
+
+;; get current buffer filetype
+ft = vim.api.nvim_buf_get_option(0, "ft")
+
+;; script variables
+local previous
+
+;; compare with previous output
+local new_lines = {}
+
+if previous and #output_lines < 1000 then 
+  local best = {}
+  ; find longest common subsequence
+  ; find current lines which are not in lcs
+else
+  ; all lines are new
+end
+
+;; find longest common subsequence
+local best = {}
+
+local A = previous
+local B = output_lines
+
+best[0] = {}
+for j=0,#B do
+  best[0][j] = {}
+end
+
+for i=1,#A do
+  best[i] = {}
+  best[i][0] = {}
+  for j=1,#B do
+    if B[j] ~= A[i] then
+      if #best[i-1][j] > #best[i][j-1] then
+        best[i][j] = best[i-1][j]
+      else
+        best[i][j] = best[i][j-1]
+      end
+    else
+      best[i][j] = vim.deepcopy(best[i-1][j-1])
+      table.insert(best[i][j], j)
+    end
+  end
+end
+
+local lcs = best[#previous][#output_lines]
+
+;; find current lines which are not in lcs
+local k = 1
+for i=1,#output_lines do
+  if k <= #lcs and lcs[k] == i then
+    k = k + 1
+  else
+    table.insert(new_lines, i)
+  end
+end
+
+;; all lines are new
+for i=1,#output_lines do
+  table.insert(new_lines, i)
+end
+
+;; save current output
+previous = output_lines
+
+;; script variables
+local hl_ns
+
+;; clear all highlight
+if hl_ns then
+  vim.api.nvim_buf_clear_namespace(buf, hl_ns, 0, -1)
+else
+  hl_ns = vim.api.nvim_create_namespace("")
+end
+
+;; higlight differences
+for _,lnum in ipairs(new_lines) do
+  vim.api.nvim_buf_add_highlight(buf, hl_ns, "Search", lnum-1, 0, -1)
+end
+
+;; abort script
+handle:close()
+stdout:read_stop()
+stderr:read_stop()
+
+;; check if tangle file
+local name = vim.api.nvim_buf_get_name(0)
+local extext = vim.fn.fnamemodify(name, ":e:e")
+local tangle = string.match(extext, ".*%.t$")
+
+;; get root ntangle
+filename = require"ntangle".getRootFilename()
+
+;; if no output clear console
+if #output_lines == 0 then
+  ; clear output window
+end
+
+;; set previous content in the meantime
+if previous then
+  vim.api.nvim_buf_set_lines(execute_buf, 0, -1, true, previous)
+end
+
+;; script variables
+local neovim_visual
+local neovim_visual_conn
+
+;; implement
+function M.execute_visual()
+  ; get current buffer filetype
+  ; get visual selection
+
+  if ft  == "lua" then
+    local open_split = true
+    local buf
+    ; close split if different tabpage
+    ; create split if none
+
+    if not neovim_visual then
+      ; spawn instance for neovim visual
+      ; connect to neovim visual
+      ; send custom print for neovim lua
+      ; start waiting loop
+    end
+
+    if not neovim_visual_timer then
+      ; start waiting loop
+    end
+
+    ; write to temporary file
+    ; send visual selection to neovim
+  elseif ft == "python" then
+    ; execute visual python
+  elseif ft == "fennel" then
+    ; execute visual fennel
+  elseif ft == "javascript" then
+    ; execute visual nodejs
+  elseif ft == "typescript" then
+    ; execute visual deno
+  elseif ft == "ruby" then
+    ; execute visual ruby
+  end
+end
+
+;; stop any visual selection instances
+if neovim_visual then
+  neovim_visual:kill()
+  neovim_visual = nil
+  ; stop neovim visual timer
+  return
+end
+
+;; close split if different tabpage
+if execute_win and vim.api.nvim_win_is_valid(execute_win) then
+  local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+  local cur_tab = vim.api.nvim_get_current_tabpage()
+  if win_tab ~= cur_tab then
+    vim.api.nvim_win_close(execute_win, true)
+    execute_win = nil
+  end
+end
+
+;; script variables
+local previous_handle
+
+;; save handle globally
+previous_handle = handle
+
+;; close previous handle
+if previous_handle then
+  if previous_handle:is_active() then
+    previous_handle:kill()
+    previous_handle = nil
+  end
+end
+
+;; check if buffer is valid
+if not vim.api.nvim_buf_is_valid(buf) then
+  return
+end
+
+;; implement
+function M.stop()
+  ; kill global handle
+end
+
+;; script variables
+local close_callback_registered = false
+
+;; register close callback if first time
+if not close_callback_registered then
+  vim.api.nvim_command([[autocmd WinClosed * lua vim.schedule(function() require"dash".close_split_if_last_one() end)]])
+  close_callback_registered = true
+end
+
+;; implement
+function M.close_split_if_last_one()
+  ; check that split is still open
+  ; count how many window in splits tab
+  ; if only window close it
+end
+
+;; check that split is still open
+if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+  return
+end
+
+;; count how many window in splits tab
+local win_tab = vim.api.nvim_win_get_tabpage(execute_win)
+local win_list = vim.api.nvim_tabpage_list_wins(win_tab)
+local count_win = #win_list
+
+;; if only window close it
+if count_win == 1 then
+  ; close vim if last tabpage
+  else
+    vim.api.nvim_win_close(execute_win, true)
+    execute_win = nil
+  end
+end
+
+;; close vim if last tabpage
+if #vim.api.nvim_list_tabpages() == 1 then
+  vim.api.nvim_command("q")

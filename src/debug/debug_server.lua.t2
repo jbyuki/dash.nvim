@@ -1,0 +1,53 @@
+;;; ../dash
+;; implement
+function M.debug_buf()
+  ; check if tangle file
+  local filename, ft
+  if tangle then
+    ; get root ntangle
+  else
+    ; get current buffer filename
+  end
+  ; get current buffer filetype
+  M.debug(filename, ft)
+end
+
+;; script variables
+local neovim_conn
+
+;; implement
+function M.debug(filename, ft)
+  if ft == "lua" then
+    ; kill previous neovim instance
+
+    ; spawn neovim instance for debug
+
+    neovim_conn = nil
+    for i=1,10 do
+      ; connect to neovim debug
+      if success then
+        break
+      end
+      vim.wait(200)
+    end
+
+    assert(neovim_conn, "Could not establish connection with debug instance")
+
+    ; get pipe address for current instance
+    ; send pipe address to debug instance
+
+    ; write debug client code to temporary file
+    ; run debug client in neovim instance
+
+    ; send all breakpoints
+    ; send filename for source
+
+    ; setup debug hook
+    ; execute lua in neovim for debug
+
+    ; start timer for break
+
+    -- @close_connect_to_neovim_debug
+    -- @kill_neovim_instance_for_debug
+  end
+end

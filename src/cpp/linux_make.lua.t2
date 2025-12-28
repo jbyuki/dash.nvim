@@ -1,0 +1,47 @@
+;;; ../dash
+;; execute make build
+local execute_program_linux
+; execute make
+; execute linux if exists
+
+;; execute make
+handle, err = vim.loop.spawn("make",
+	{
+		stdio = {stdin, stdout, stderr},
+		args = { "-j4", "all" },
+		cwd = ".",
+	}, function(code, signal)
+    vim.schedule(function()
+      ; find target name in makefile
+      -- if code == 0 and exe_file and exe_file ~= "" then
+        -- execute_program_linux(exe_file)
+      -- else
+      finish(code, signal)
+      -- end
+    end)
+  end)
+
+;; find target name in makefile
+local makefile = vim.fn.glob("Makefile")
+local exe_file
+for line in io.lines(makefile) do
+  exe_file = line:match("^all%s*:%s*(%w+)")
+  if exe_file then
+    break
+  end
+end
+
+;; execute linux if exists
+function execute_program_linux(exe_file)
+  ; clear output lines
+  ; clear output window
+  ; create pipes
+  handle, err = vim.loop.spawn("./" .. exe_file,
+    {
+      stdio = {stdin, stdout, stderr},
+      cwd = ".",
+    }, finish)
+
+  ; if spawn error print
+  ; register pipe callback neovim
+end

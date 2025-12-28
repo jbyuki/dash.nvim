@@ -1,0 +1,181 @@
+;;; ../dash
+;; implement
+function M.find_sln()
+  local path = vim.fn.expand("%:p")
+  local sln_path
+  while true do
+    local parent = vim.fn.fnamemodify(path, ":h")
+    ; list directories in parent
+    ; find build directory with sln
+    ; find sln in build directory
+
+    if sln_path then
+      break
+    end
+
+    if parent == path then
+      break
+    end
+    path = parent 
+  end
+  return sln_path
+end
+
+;; list directories in parent
+local dirs = {}
+for file in vim.gsplit(vim.fn.glob(parent .. "/*"), "\n") do
+  if vim.fn.isdirectory(file) == 1 then
+    table.insert(dirs, file)
+  end
+end
+
+;; find build directory with sln
+local build_path
+for _, dir in ipairs(dirs) do
+  if vim.fn.fnamemodify(dir, ":t") == "build" then
+    build_path = dir
+    break
+  end
+end
+
+;; find sln in build directory
+if build_path then
+  for file in vim.gsplit(vim.fn.glob(build_path .. "/*"), "\n") do
+    if vim.fn.isdirectory(file) == 0 then
+      if vim.fn.fnamemodify(file, ":e") == "sln" then
+        sln_path = file
+        break
+      end
+    end
+  end
+end
+
+;; try find vs solution
+local vs = M.find_sln()
+local build_path = vim.fn.fnamemodify(vs, ":h")
+
+;; spawn vs compilation
+; find tasks json cpp vs
+handle, err = vim.loop.spawn("MSBuild.exe",
+	{
+		stdio = {stdin, stdout, stderr},
+    args = compile_args,
+		cwd = ".",
+	}, function(code, signal)
+    vim.schedule(function()
+      if code == 0 then
+        execute_program()
+      else
+        ; parse errors cpp
+        ; put errors in quickfix cpp
+        finish(code, signal)
+      end
+    end)
+end)
+
+;; execute cpp program on success
+function execute_program()
+  local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build"
+  local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
+
+	MAX_LINES = 100000000
+	; remove exes
+
+  local execute_program_single
+  
+  execute_program_single = function(exe_file)
+		if not exe_file then
+			return
+		end
+    ; find launch json vs cpp
+
+    ; clear output lines
+    ; clear output window
+    ; create pipes
+    handle, err = vim.loop.spawn(exe_file,
+      {
+        stdio = {stdin, stdout, stderr},
+        args = args,
+        cwd = ".",
+      }, finish)
+
+    ; if spawn error print
+    ; register pipe callback neovim
+  end
+
+  assert(#exes >= 0, "Not exe found")
+
+  if #exes > 1 then
+    vim.ui.select(exes, {}, execute_program_single)
+  else
+    execute_program_single(exes[1])
+  end
+end
+
+;; find launch json vs cpp
+local args = nil 
+local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/launch.json"
+
+local f = io.open(json_path, "r")
+if f then
+  local lines = {}
+  while true do
+    local line = f:read()
+    if not line then
+      break
+    end
+    table.insert(lines, line)
+  end
+
+  local content = table.concat(lines, "\n")
+  local decoded = vim.json.decode(content)
+
+  ; modify launch config cpp vs
+  f.close()
+end
+
+;; modify launch config cpp vs
+args = decoded.args
+
+;; find tasks json cpp vs
+local compile_args = { vs }
+
+local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/tasks.json"
+
+local f = io.open(json_path, "r")
+if f then
+  local lines = {}
+  while true do
+    local line = f:read()
+    if not line then
+      break
+    end
+    table.insert(lines, line)
+  end
+
+  local content = table.concat(lines, "\n")
+  local decoded = vim.json.decode(content)
+
+  ; modify task config cpp vs
+  f.close()
+end
+
+;; modify task config cpp vs
+if decoded.config then
+  table.insert(compile_args, ("-p:Configuration=%s"):format(decoded.config))
+end
+
+;; remove exes
+exes = vim.tbl_filter(function(path)
+	local filename = vim.fn.fnamemodify(path, ":t")
+	if filename == "CompilerIdC.exe" then
+		return false
+	elseif filename == "CompilerIdCXX.exe" then
+		return false
+	elseif filename == "CMakeCCompilerId.exe" then
+		return false
+	elseif filename == "CMakeCXXCompilerId.exe" then
+		return false
+	end
+	return true
+end, exes)

@@ -1,0 +1,11 @@
+;;; ../dash
+;; send continue to neovim debug
+vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[dash_step = nil]], {})
+
+;; implement
+function M.step()
+  vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[dash_step = true]], {})
+  vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[dash_continue = true]], {})
+  ; remove pc sign
+  ; start timer for break
+end

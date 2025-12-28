@@ -1,0 +1,227 @@
+;;; ../dash
+;; implement
+function M.execute_lua_ntangle_v2()
+	local buf
+	local open_split = true
+	; close split if different tabpage
+
+	; create split if none and neovim instance
+
+	; get code content at current section v2
+
+  ; clear all grey highlight
+  ; put grey highlight over
+
+	; execute lua code in remote
+end
+
+;; get code content at current section v2
+local found, ntangle_inc = pcall(require, "ntangle-inc")
+assert(found)
+
+local codebuf = vim.api.nvim_get_current_buf()
+local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+
+local lnum = row-1
+; get hl elem at lnum
+if hl_elem and hl_elem.part then
+	hl_elem = hl_elem.part
+end
+; get lines at hl elem
+
+local ntangle_code = table.concat(lines, "\n")
+
+;; get hl elem at lnum
+local hl_elem = ntangle_inc.Tto_hl_elem(codebuf, lnum)
+
+;; get lines at hl elem
+local lines = {}
+if hl_elem then
+	local Tangle = require"vim.tangle"
+	local ll = Tangle.get_ll_from_buf(codebuf)
+	assert(ll)
+	local hl = Tangle.get_hl_from_ll(ll)
+	assert(hl)
+
+	lines = hl:getlines_all(hl_elem, lines)
+end
+
+;; script variables
+local grey_id
+
+;; implement
+function M.execute_lua_ntangle_visual_v2()
+	local buf
+	local open_split = true
+	; close split if different tabpage
+
+	; create split if none and neovim instance
+
+  ; get code content at current section visual v2
+
+
+  ; clear all grey highlight
+  ; put grey highlight over
+
+	; execute lua code in remote
+end
+
+;; get code content at current section visual v2
+local _,slnum,_,_ = unpack(vim.fn.getpos("'<"))
+local _,elnum,_,_ = unpack(vim.fn.getpos("'>"))
+local codebuf = vim.api.nvim_get_current_buf()
+
+local found, ntangle_inc = pcall(require, "ntangle-inc")
+assert(found)
+
+local all_lines = {}
+for lnum=slnum-1,elnum-1 do
+	; get hl elem at lnum
+	; get lines at hl elem
+	; append lines to all lines
+end
+
+local ntangle_code = table.concat(all_lines, "\n")
+
+;; append lines to all lines
+for _, line in ipairs(lines) do
+	table.insert(all_lines, line)
+end
+
+;; script variables
+local neovim_chan, neovim_proc
+
+;; start neovim kernel
+local tcp_port
+; get free tcp address
+neovim_proc = vim.system({vim.v.progpath, "--headless", "--listen", ("127.0.0.1:%d"):format(tcp_port)}, { 
+	; define neovim proc callbacks
+})
+
+local connect_success = false
+for i=1,100 do
+	; try connection with proc
+	vim.wait(30)
+end
+
+assert(connect_success)
+
+; clear output lines
+; clear output window
+
+; append neovim version header
+
+;; get free tcp address
+local temp_tcp = vim.loop.new_tcp()
+temp_tcp:bind("127.0.0.1", 0)
+local tcp_port = temp_tcp:getsockname().port
+temp_tcp:close_reset()
+
+;; try connection with proc
+success, neovim_chan = pcall(vim.fn.sockconnect, "tcp", ("127.0.0.1:%d"):format(tcp_port), { rpc = true })
+if success then
+	connect_success = true
+	break
+end
+
+;; define neovim proc callbacks
+stdout = vim.schedule_wrap(function(err, data)
+	assert(not err)
+	if data then
+		; append data to output lines
+		vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+
+		; scroll buffer to last line
+	end
+end),
+
+stderr = vim.schedule_wrap(function(err, data)
+	assert(not err)
+	if data then
+		local new_lines = {}
+		; append data to output lines
+		vim.api.nvim_buf_set_lines(buf, -1, -1, true, new_lines)
+		; scroll buffer to last line
+	end
+end)
+
+;; script variables
+local lua_temp_file
+
+;; execute lua code in remote
+local syntax_error = false
+; check syntax error
+if not syntax_error then
+	; wrap code into error handler
+	; if no temp file generate name
+	; write code to temp file
+	vim.fn.rpcnotify(neovim_chan, "nvim_exec", "luafile " .. lua_temp_file, false)
+end
+
+;; if no temp file generate name
+if not lua_temp_file then
+	lua_temp_file = vim.fn.tempname()
+end
+
+;; write code to temp file
+local f = io.open(lua_temp_file, "w")
+f:write(ntangle_code)
+f:close()
+
+;; append data to output lines
+new_lines = vim.split(data, "\r*\n")
+
+;; append neovim version header
+local _, info = unpack(vim.fn.rpcrequest(neovim_chan, "nvim_get_api_info"))
+local header = ("NVIM v%d.%d.%d-%s"):format(info.version.major, info.version.minor, info.version.patch, info.version.build)
+vim.api.nvim_buf_set_lines(buf, 0, -1, true, {header, ""})
+
+;; create split if none and neovim instance
+if not execute_win or not vim.api.nvim_win_is_valid(execute_win) then
+	; create grey namespace
+  ; register close callback if first time
+  ; create new window for execution
+  ; create new buffer into window
+
+	buf = execute_buf
+
+	; stop neovim kernel if running
+	; start neovim kernel
+end
+
+buf = execute_buf
+
+;; stop neovim kernel if running
+if neovim_proc then
+	neovim_proc:kill()
+	neovim_chan = nil
+	neovim_proc = nil
+end
+
+;; clear all grey highlight
+vim.api.nvim_buf_clear_namespace(buf, grey_id, 0, -1)
+
+;; create grey namespace
+grey_id = vim.api.nvim_create_namespace("")
+
+;; check syntax error
+local good, err = loadstring(ntangle_code)
+if not good then
+	vim.api.nvim_buf_set_lines(buf, -1, -1, true, { err })
+	syntax_error = true
+end
+
+;; wrap code into error handler
+ntangle_code = ([[
+	local succ, osv = pcall(require, "osv")
+	if not succ or not osv.is_attached() then
+		local success, err = pcall(function()
+			%s
+		end)
+		if not success and err then
+			io.write(err)
+		end
+	else
+			%s
+	end
+]]):format(ntangle_code, ntangle_code)

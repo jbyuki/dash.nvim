@@ -1,0 +1,8 @@
+;;; ../dash
+;; spawn dart instance
+handle, err = vim.loop.spawn("dart",
+	{
+		stdio = {stdin, stdout, stderr},
+		args = {filename},
+		cwd = ".",
+	}, finish)

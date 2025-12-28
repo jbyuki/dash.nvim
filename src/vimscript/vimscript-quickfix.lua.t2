@@ -1,0 +1,45 @@
+;;; ../dash
+;; parse error for quickfix
+if ft == "vim" then
+  local filename
+  local in_error = false
+  local lnum
+  local errors = {}
+  for line in vim.gsplit(data, "\r*\n") do
+    if string.match(line, "^Error detected while processing") then
+      ; extract vim filename where error is
+      in_error = true
+    elseif in_error and string.match(line, "^line") then
+      ; extract line number where error is vimscript
+    elseif in_error and string.match(line, "^E%d+: ") then
+      ; extract error text vimscript
+      ; add error entry in quickfix vimscript
+    end
+  end
+
+  ; set vimscript error in quickfix
+end
+
+;; extract vim filename where error is
+filename = string.match(line, "^Error detected while processing (.+):")
+
+;; extract line number where error is vimscript
+lnum = string.match(line, "^line (%d+)")
+
+;; extract error text vimscript
+local errnum, errmsg = string.match(line, "^E(%d+): (.+)")
+
+;; add error entry in quickfix vimscript
+table.insert(errors, {
+  filename = filename,
+  lnum = lnum,
+  nr = errnum,
+  text = errmsg,
+  type = 'E',
+})
+
+;; set vimscript error in quickfix
+vim.fn.setqflist(errors)
+if #errors > 0 then
+  open_quickfix = true
+end

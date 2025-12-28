@@ -1,0 +1,73 @@
+;;; ../dash
+;; implement
+function M.toggle_breakpoint()
+  ; get current line number
+  ; get breakpoint at current line
+  ; toggle breakpoint sign at current line
+  if debug_running then
+    ; check if tangle file
+    if tangle then
+      ; get tangle line mapping for current file
+      ; send breakpoint to debug neovim tangled
+    else
+      ; send breakpoint to debug neovim
+    end
+  end
+end
+
+function M.clear_breakpoints()
+  ; clear all breakpoint signs
+  if debug_running then
+    ; clear breapoints in debug neovim
+  end
+end
+
+;; get current line number
+local lnum, _  = unpack(vim.api.nvim_win_get_cursor(0))
+
+;; send breakpoint to debug neovim
+vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "if dash_breakpoint[" .. lnum .. "] then dash_breakpoint[" .. lnum .. "] = nil else dash_breakpoint[" .. lnum .. "] = true end" , {})
+
+;; clear breapoints in debug neovim
+vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_breakpoint = {}" , {})
+
+;; send all breakpoints
+; get all breakpoint in current buffer
+; clear breapoints in debug neovim
+
+; check if tangle file
+if tangle then
+  ; get tangle line mapping for current file
+  ; send all breakpoints to neovim debug tangled
+else
+  ; send all breakpoints to neovim debug
+end
+
+;; define signs
+vim.fn.sign_define("dashBreakpointDef", { text = "B", texthl = "debugBreakpoint" })
+
+;; get current line number
+local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
+
+;; get breakpoint at current line
+local bufname = vim.api.nvim_buf_get_name(0)
+local signs = vim.fn.sign_getplaced(bufname, {group="dashBreakpoint", lnum=row})
+
+;; toggle breakpoint sign at current line
+if #signs[1].signs == 0 then
+  vim.fn.sign_place(0, "dashBreakpoint", "dashBreakpointDef", bufname, {lnum = row})
+else
+  vim.fn.sign_unplace("dashBreakpoint", { buffer = bufname, id = signs[1].signs[1].id })
+end
+
+;; clear all breakpoint signs
+vim.fn.sign_unplace("dashBreakpoint", { buffer = bufname })
+
+;; get all breakpoint in current buffer
+local bufname = vim.api.nvim_buf_get_name(0)
+local signs = vim.fn.sign_getplaced(bufname, {group="dashBreakpoint"})
+
+;; send all breakpoints to neovim debug
+for _, sign in ipairs(signs[1].signs) do
+  vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_breakpoint[" .. sign.lnum .. "] = true" , {})
+end

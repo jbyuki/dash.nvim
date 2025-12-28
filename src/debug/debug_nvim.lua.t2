@@ -1,0 +1,49 @@
+;;; ../dash
+;; script variables
+local neovim_port = 81489
+local pipe_address
+local neovim_handle
+
+;; spawn neovim instance for debug
+if vim.fn.has('win32') then
+  pipe_address = [[\\.\pipe\nvim-pipe-23493]]
+else
+  -- NEEDS TESTING
+  pipe_address = vim.fn.tempname()
+end
+
+local err
+neovim_handle, err = vim.loop.spawn("nvim",
+	{
+		args = {"--headless", "-u", "NONE", "--listen", pipe_address},
+		cwd = ".",
+	}, function(code, signal)
+    vim.schedule(function()
+      debug_running = false
+    end)
+  end
+)
+
+if not neovim_handle then
+  print(err)
+  debug_running = false
+else
+  debug_running = true
+end
+
+;; kill previous neovim instance
+if neovim_handle then
+  neovim_handle:kill()
+  neovim_handle = nil
+end
+
+;; kill neovim instance for debug
+neovim_handle:kill()
+neovim_handle = nil
+
+;; connect to neovim debug
+local err, success
+success, neovim_conn = pcall(vim.fn.sockconnect, "pipe", pipe_address, { rpc = true })
+
+;; close connect to neovim debug
+vim.fn.chanclose(neovim_conn)

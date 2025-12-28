@@ -1,0 +1,62 @@
+;;; ../dash
+;; spawn nasm instance
+handle, err = vim.loop.spawn("nasm",
+	{
+		stdio = {stdin, stdout, stderr},
+    args = { "-felf64", filename },
+		cwd = ".",
+	}, function(code, signal)
+    vim.schedule(function()
+      if code == 0 then
+        link_program()
+      else
+        finish(code, signal)
+      end
+    end)
+  end)
+
+;; link nasm program on success
+function link_program()
+  ; replace asm extension with o
+  ; spawn ld to link obj file
+end
+
+;; replace asm extension with o
+local obj_file = vim.fn.fnamemodify(filename, ":r") .. ".o"
+
+;; spawn ld to link obj file
+; clear output lines
+; clear output window
+; create pipes
+handle, err = vim.loop.spawn("gcc",
+  {
+    stdio = {stdin, stdout, stderr},
+    args = { "-no-pie", obj_file },
+    cwd = ".",
+  }, function(code, signal)
+    vim.schedule(function()
+      if code == 0 then
+        execute_program()
+      else
+        finish(code, signal)
+      end
+    end)
+  end)
+
+; if spawn error print
+; register pipe callback neovim
+
+;; execute nasm program on success
+function execute_program()
+  ; clear output lines
+  ; clear output window
+  ; create pipes
+  handle, err = vim.loop.spawn("./a.out",
+    {
+      stdio = {stdin, stdout, stderr},
+      cwd = ".",
+    }, finish)
+
+  ; if spawn error print
+  ; register pipe callback neovim
+end

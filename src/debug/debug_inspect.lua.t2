@@ -1,0 +1,96 @@
+;;; ../dash
+;; fill vars with local variables
+local stack = 2
+local stack_valid = true
+while stack_valid do
+  local li = 1
+  while true do
+    local lv, lv
+    stack_valid, ln, lv = pcall(debug.getlocal, stack, li)
+    if not stack_valid then
+      break
+    end
+    li = li + 1
+    if not ln then break end
+
+    dash_debug_vars[ln] = lv
+  end
+  stack = stack + 1
+end
+
+;; set globals as metatable
+setmetatable(dash_debug_vars, {
+  __index = _G
+})
+
+;; transform inspect name expression
+local str = dash_inspect_name:gsub('%a[a-zA-Z0-9_]*', 'dash_debug_vars["%0"]')
+str = str:gsub('%.dash_debug_vars%["(.-)"%]', '.%1')
+dash_inspect_name = "return " .. str
+
+;; execute inspect name expression
+local f = loadstring(dash_inspect_name)
+if f then
+  local ret
+  ret, dash_inspect_result = pcall(f)
+  if not ret then
+    ; parse error message debug
+  end
+end
+
+;; implement
+function M.inspect()
+  ; get variable name to inspect under cursor
+  ; send inspect name to neovim debug
+  ; wait for inspect result
+end
+
+;; send inspect name to neovim debug
+vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_result_done = false", {})
+vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_result = nil", {})
+vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_inspect_name = " .. vim.inspect(name), {})
+
+;; wait for inspect result
+local timer = vim.loop.new_timer()
+timer:start(0, 200, function()
+  vim.schedule(function()
+    ; retrieve inspect result done
+    if dash_inspect_result_done then
+      ; retrieve inspect result
+
+      ; create buffer inspect
+      ; put inspect result in inspect buffer
+      ; create float window inspect
+      ; register close float window inspect
+      timer:close()
+    end
+  end)
+end)
+
+;; retrieve inspect result done
+local dash_inspect_result_done = vim.fn.rpcrequest(neovim_conn, 'nvim_exec_lua', [[return dash_inspect_result_done]], {})
+
+;; retrieve inspect result
+local dash_inspect_result = vim.fn.rpcrequest(neovim_conn, 'nvim_exec_lua', [[return dash_inspect_result]], {})
+
+;; get variable name to inspect under cursor
+local name = vim.fn.expand("<cword>")
+
+;; implement
+function M.vinspect()
+  ; get name in visual selection
+  ; send inspect name to neovim debug
+  ; wait for inspect result
+end
+
+;; get name in visual selection
+local _, srow, scol, _ = unpack(vim.fn.getpos("'<"))
+local _, erow, ecol, _ = unpack(vim.fn.getpos("'>"))
+
+assert(srow == erow, "only single row selection are supported!")
+
+local line = vim.api.nvim_buf_get_lines(0, srow-1, srow, true)[1]
+local name = string.sub(line, scol, ecol)
+
+;; parse error message debug
+dash_inspect_result = string.match(dash_inspect_result, ".*:.*: (.*)")

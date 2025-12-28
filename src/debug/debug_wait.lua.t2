@@ -1,0 +1,27 @@
+;;; ../dash
+;; start timer for break
+local timer = vim.loop.new_timer()
+timer:start(0, 200, function()
+  if dash_breaked then
+    vim.schedule(function()
+      ; retrieve current line in debugger
+      ; retrieve filename in debugger
+      ; check if tangle file
+      if tangle then
+        ; get tangle line mapping for current file
+        ; put sign for pc tangled
+      else
+        ; put sign for pc
+      end
+      print("Debugger breaked on line " .. cur_lnum .. "!")
+    end)
+    dash_breaked = false
+    timer:close()
+  end
+end)
+
+;; retrieve current line in debugger
+local cur_lnum = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_current_line]], {})
+
+;; retrieve filename in debugger
+local cur_filename = vim.fn.rpcrequest(neovim_conn, "nvim_exec_lua", [[return dash_return_filename]], {})

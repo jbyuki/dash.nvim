@@ -1,0 +1,12 @@
+;;; ../dash
+;; spawn fennel instance
+handle, err = vim.loop.spawn("cmd",
+	{
+		stdio = {stdin, stdout, stderr},
+		args = {"/c fennel " .. filename},
+		cwd = ".",
+	}, finish)
+
+;; execute visual fennel
+; write to temporary file
+M.execute(fname, ft, true)

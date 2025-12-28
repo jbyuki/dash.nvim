@@ -1,0 +1,76 @@
+;;; ../dash
+;; script variables
+local client_code_fn
+local client_code = [[ 
+; define debug hooks
+]]
+
+;; write debug client code to temporary file
+if not client_code_fn then
+  client_code_fn = vim.fn.tempname()
+  -- print("temp file " .. client_code_fn)
+  local f = io.open(client_code_fn, "w")
+  for line in vim.gsplit(client_code, "\r*\n") do
+    f:write(line .. "\n")
+  end
+  f:close()
+end
+
+;; run debug client in neovim instance
+vim.fn.rpcnotify(neovim_conn, "nvim_exec", "luafile " .. client_code_fn, false)
+vim.wait(200)
+
+;; execute lua in neovim for debug
+vim.fn.rpcnotify(neovim_conn, "nvim_exec", "luafile " .. filename, false)
+
+;; define debug hooks
+dash_current_line = nil
+previous_lnum = nil
+dash_filename = nil
+dash_return_filename = nil
+
+function dash_every_line(event, lnum)
+  if lnum == 0 or lnum == previous_lnum then
+    return
+  end
+
+  local info = debug.getinfo(2, 'S')
+  if info.source ~= "@" .. dash_filename then
+    return
+  end
+
+  dash_current_line = lnum
+  previous_lnum = lnum
+
+  if dash_breakpoint[lnum] or dash_step then
+    dash_continue = false
+    ; send to host that breaked
+    ; wait for continue
+  end
+end
+
+;; setup debug hook
+vim.fn.rpcnotify(neovim_conn, "nvim_exec_lua", [[debug.sethook(dash_every_line, "l", 0)]], {})
+
+;; wait for continue
+while not dash_continue do
+  if dash_inspect_name then
+    dash_debug_vars = {}
+    ; fill vars with local variables
+    ; set globals as metatable
+    ; transform inspect name expression
+    ; execute inspect name expression
+    dash_inspect_result_done = true
+    dash_inspect_name = nil
+  end
+  vim.wait(200)
+end
+
+;; send to host that breaked
+vim.fn.rpcnotify(dash_debug_conn, "nvim_exec_lua", "dash_breaked = true", {})
+
+;; script variables
+dash_breaked = false
+
+;; send filename for source
+vim.fn.rpcnotify(neovim_conn, 'nvim_exec_lua', "dash_filename = " .. vim.inspect(filename), {})

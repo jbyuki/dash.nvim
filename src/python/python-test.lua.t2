@@ -1,0 +1,8 @@
+;;; ../dash
+;; add tests
+tests["python"] = {
+  str = [[
+print("hello")
+]],
+  expected = { "hello", "" }
+}

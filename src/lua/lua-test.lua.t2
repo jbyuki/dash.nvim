@@ -1,0 +1,8 @@
+;;; ../dash
+;; add tests
+tests["lua"] = {
+  str = [[
+print("hello")
+]],
+  expected = { "hello" }
+}

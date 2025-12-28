@@ -1,0 +1,8 @@
+;;; ../dash
+;; add tests
+tests["vim"] = {
+  str = [[
+echo "hello"
+]],
+  expected = { "hello" }
+}
