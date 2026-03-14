@@ -55,6 +55,8 @@ function M.execute(filename, ft, open_split, done)
     ; spawn go instance
   elseif ft == "dart" then
     ; spawn dart instance
+  elseif ft == "metal" then
+    ; spawn metal instance
   elseif ft == "tex" or ft == "plaintex" then
     ; spawn tex instance
   elseif ft == "fennel" then

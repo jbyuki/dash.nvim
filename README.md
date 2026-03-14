@@ -27,6 +27,7 @@ Supported
 | _Go_ | :seedling: || | |
 | _GLSL_ / glslc | :seedling: || | |
 | _Bash_ | :seedling: || | |
+| _Metal_ | :seedling: || | |
 
 Can be used in conjunction with [ntangle.nvim](https://github.com/jbyuki/ntangle.nvim).
 

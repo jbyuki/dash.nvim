@@ -159,7 +159,7 @@ function M.find_sln()
         table.insert(dirs, file)
       end
     end
-    
+
     local build_path
     for _, dir in ipairs(dirs) do
       if vim.fn.fnamemodify(dir, ":t") == "build" then
@@ -167,7 +167,7 @@ function M.find_sln()
         break
       end
     end
-    
+
     if build_path then
       for file in vim.gsplit(vim.fn.glob(build_path .. "/*"), "\n") do
         if vim.fn.isdirectory(file) == 0 then
@@ -178,7 +178,7 @@ function M.find_sln()
         end
       end
     end
-    
+
 
     if sln_path then
       break
@@ -1155,6 +1155,69 @@ function M.execute(filename, ft, open_split, done)
     		args = {filename},
     		cwd = ".",
     	}, finish)
+  elseif ft == "metal" then
+    local compile_metal_lib
+    local compile_metal_next
+    local metal_files = {}
+
+    local parentdir = vim.fs.dirname(filename)
+    for n, t in vim.fs.dir(parentdir) do
+      if n:match("%.metal$") then
+        table.insert(metal_files, vim.fs.joinpath(parentdir, n))
+      end
+    end
+
+    compile_metal_next = function(code, signal)
+      if code == 0 or code == nil then
+        if #metal_files == 0 then
+          return compile_metal_lib(code, signal)
+        end
+
+        local path = metal_files[1]
+        table.remove(metal_files, 1)
+        local ir_path = path:sub(1,#path-#("metal")) .. "ir"
+
+        handle, err = vim.loop.spawn("xcrun",
+          {
+            stdio = {stdin, stdout, stderr},
+            args = {"-sdk", "macosx", "metal", "-o", ir_path, "-c", path },
+            cwd = ".",
+          }, vim.schedule_wrap(compile_metal_next))
+        return handle, err
+      else
+          finish(code, signal)
+      end
+    end
+
+    compile_metal_lib = function(code, signal)
+      if code == 0 then
+        local parentdir = vim.fs.dirname(filename)
+        for n, t in vim.fs.dir(parentdir) do
+          if n:match("%.metal$") then
+            table.insert(metal_files, vim.fs.joinpath(parentdir, n))
+          end
+        end
+
+        local lib_path = vim.fs.joinpath(parentdir, "default.metallib")
+        local args = {"-sdk", "macosx", "metal", "-o", lib_path }
+        for _,path in ipairs(metal_files) do
+          local ir_path = path:sub(1,#path-#("metal")) .. "ir"
+          table.insert(args, ir_path)
+        end
+
+        vim.loop.spawn("xcrun",
+          {
+            stdio = {stdin, stdout, stderr},
+            args = args,
+            cwd = ".",
+          }, finish)
+      else
+        finish(code,signal)
+      end
+    end
+
+    handle, err = compile_metal_next()
+
   elseif ft == "tex" or ft == "plaintex" then
     local finish_tex = function(code, signal)
       vim.schedule(function()
@@ -1541,27 +1604,27 @@ function M.execute(filename, ft, open_split, done)
 				    table.insert(files, file)
 				  end
 				end
-				
+
 				for _, file in ipairs(files) do
 					if vim.fn.fnamemodify(file, ":t") == "CMakeLists.txt" then
 						cmakelists_path = file
 						break
 					end
 				end
-				
-			
+
+
 				if parent == path then
 					break
 				end
 				path = parent 
 			end
-			
+
 			if cmakelists_path then
 				local build_path = vim.fn.fnamemodify(cmakelists_path, ":h") .. "/build"
 				local compile_args = { "--build",  build_path }
-				
+
 				local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/tasks.json"
-				
+
 				local f = io.open(json_path, "r")
 				if f then
 				  local lines = {}
@@ -1572,29 +1635,29 @@ function M.execute(filename, ft, open_split, done)
 				    end
 				    table.insert(lines, line)
 				  end
-				
+
 				  local content = table.concat(lines, "\n")
 				  local decoded = vim.json.decode(content)
-				
+
 				  if decoded.config then
 				  	table.insert(compile_args, "--config")
 				    table.insert(compile_args, decoded.config)
 				  end
-				  
+
 				  f.close()
 				end
-				
+
 				local env = {}
 				for line in io.lines(vim.g.vsvarlist) do
 					table.insert(env, line)
 				end
-				
+
 				assert(vim.tbl_count(env) > 0)
-				
+
 				function execute_program()
 				  local bin_path = vim.fn.fnamemodify(build_path, ":h") .. "/build"
 				  local exes = vim.split(vim.fn.glob(bin_path .. "/**/*.exe"), "\n")
-				
+
 					MAX_LINES = 100000000
 					exes = vim.tbl_filter(function(path)
 						local filename = vim.fn.fnamemodify(path, ":t")
@@ -1609,7 +1672,7 @@ function M.execute(filename, ft, open_split, done)
 						end
 						return true
 					end, exes)
-				
+
 				  local execute_program_single
 				  
 				  execute_program_single = function(exe_file)
@@ -1618,7 +1681,7 @@ function M.execute(filename, ft, open_split, done)
 						end
 				    local args = nil 
 				    local json_path = vim.fn.fnamemodify(build_path, ":h") .. "/launch.json"
-				    
+
 				    local f = io.open(json_path, "r")
 				    if f then
 				      local lines = {}
@@ -1629,16 +1692,16 @@ function M.execute(filename, ft, open_split, done)
 				        end
 				        table.insert(lines, line)
 				      end
-				    
+
 				      local content = table.concat(lines, "\n")
 				      local decoded = vim.json.decode(content)
-				    
+
 				      args = decoded.args
-				      
+
 				      f.close()
 				    end
-				    
-				
+
+
 				    output_lines = {}
 				    
 				    output_all = ""
@@ -1655,7 +1718,7 @@ function M.execute(filename, ft, open_split, done)
 				        args = args,
 				        cwd = ".",
 				      }, finish)
-				
+
 				    assert(handle, err)
 				    
 				    stdout:read_start(function(err, data)
@@ -1792,16 +1855,16 @@ function M.execute(filename, ft, open_split, done)
 				    end)
 				    
 				  end
-				
+
 				  assert(#exes >= 0, "Not exe found")
-				
+
 				  if #exes > 1 then
 				    vim.ui.select(exes, {}, execute_program_single)
 				  else
 				    execute_program_single(exes[1])
 				  end
 				end
-				
+
 				handle, err = vim.loop.spawn("cmake",
 					{
 						stdio = {stdin, stdout, stderr},
@@ -1817,9 +1880,9 @@ function M.execute(filename, ft, open_split, done)
 							end
 				    end)
 				end)
-				
+
 			end
-			
+
       -- @try_find_vs_solution
       -- if vs then
         -- local execute_program
@@ -1851,7 +1914,7 @@ function M.execute(filename, ft, open_split, done)
                   break
                 end
               end
-              
+
               -- if code == 0 and exe_file and exe_file ~= "" then
                 -- execute_program_linux(exe_file)
               -- else
@@ -1859,7 +1922,7 @@ function M.execute(filename, ft, open_split, done)
               -- end
             end)
           end)
-        
+
         function execute_program_linux(exe_file)
           output_lines = {}
           
@@ -1876,7 +1939,7 @@ function M.execute(filename, ft, open_split, done)
               stdio = {stdin, stdout, stderr},
               cwd = ".",
             }, finish)
-        
+
           assert(handle, err)
           
           stdout:read_start(function(err, data)
@@ -2013,7 +2076,7 @@ function M.execute(filename, ft, open_split, done)
           end)
           
         end
-        
+
       else
         local execute_program_bat
         handle, err = vim.loop.spawn("cmake",
@@ -2057,7 +2120,7 @@ function M.execute(filename, ft, open_split, done)
               stdio = {stdin, stdout, stderr},
               cwd = ".",
             }, finish)
-        
+
           assert(handle, err)
           
           stdout:read_start(function(err, data)

@@ -1,0 +1,64 @@
+;;; ../dash
+;; spawn metal instance
+local compile_metal_lib
+local compile_metal_next
+local metal_files = {}
+
+; collect all metal files in same directory
+; define compile metal ir
+; define compile metal lib
+
+handle, err = compile_metal_next()
+
+;; collect all metal files in same directory
+local parentdir = vim.fs.dirname(filename)
+for n, t in vim.fs.dir(parentdir) do
+  if n:match("%.metal$") then
+    table.insert(metal_files, vim.fs.joinpath(parentdir, n))
+  end
+end
+
+;; define compile metal ir
+compile_metal_next = function(code, signal)
+  if code == 0 or code == nil then
+    if #metal_files == 0 then
+      return compile_metal_lib(code, signal)
+    end
+
+    local path = metal_files[1]
+    table.remove(metal_files, 1)
+    local ir_path = path:sub(1,#path-#("metal")) .. "ir"
+
+    handle, err = vim.loop.spawn("xcrun",
+      {
+        stdio = {stdin, stdout, stderr},
+        args = {"-sdk", "macosx", "metal", "-o", ir_path, "-c", path },
+        cwd = ".",
+      }, vim.schedule_wrap(compile_metal_next))
+    return handle, err
+  else
+      finish(code, signal)
+  end
+end
+
+;; define compile metal lib
+compile_metal_lib = function(code, signal)
+  if code == 0 then
+    ; collect all metal files in same directory
+    local lib_path = vim.fs.joinpath(parentdir, "default.metallib")
+    local args = {"-sdk", "macosx", "metal", "-o", lib_path }
+    for _,path in ipairs(metal_files) do
+      local ir_path = path:sub(1,#path-#("metal")) .. "ir"
+      table.insert(args, ir_path)
+    end
+
+    vim.loop.spawn("xcrun",
+      {
+        stdio = {stdin, stdout, stderr},
+        args = args,
+        cwd = ".",
+      }, finish)
+  else
+    finish(code,signal)
+  end
+end
