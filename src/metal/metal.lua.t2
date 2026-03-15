@@ -20,7 +20,7 @@ end
 
 ;; define compile metal ir
 compile_metal_next = function(code, signal)
-  if code == 0 or code == nil then
+  if (code == 0 or code == nil) and (signal == 0 or signal == nil) then
     if #metal_files == 0 then
       return compile_metal_lib(code, signal)
     end
@@ -29,12 +29,18 @@ compile_metal_next = function(code, signal)
     table.remove(metal_files, 1)
     local ir_path = path:sub(1,#path-#("metal")) .. "ir"
 
+    ; clear output lines
+    ; clear output window
+    ; create pipes
     handle, err = vim.loop.spawn("xcrun",
       {
         stdio = {stdin, stdout, stderr},
         args = {"-sdk", "macosx", "metal", "-o", ir_path, "-c", path },
         cwd = ".",
       }, vim.schedule_wrap(compile_metal_next))
+
+    ; if spawn error print
+    ; register pipe callback neovim
     return handle, err
   else
       finish(code, signal)
@@ -52,12 +58,17 @@ compile_metal_lib = function(code, signal)
       table.insert(args, ir_path)
     end
 
+    ; clear output lines
+    ; clear output window
+    ; create pipes
     vim.loop.spawn("xcrun",
       {
         stdio = {stdin, stdout, stderr},
         args = args,
         cwd = ".",
       }, finish)
+    ; if spawn error print
+    ; register pipe callback neovim
   else
     finish(code,signal)
   end
